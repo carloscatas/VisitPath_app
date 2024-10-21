@@ -1,0 +1,67 @@
+[
+  {
+    "nombre": "Parque Güell",
+    "descripcion": "Un extenso parque con jardines y elementos arquitectónicos de Antoni Gaudí, ubicado en la parte superior de la ciudad de Barcelona.",
+    "ubicacion": {
+      "_latitude": 41.4144941,
+      "_longitude": 2.152694
+    },
+    "audioURL": "https://example.com/audio/parque-guell.mp3",
+    "movilidadReducida": false,
+    "categoria": "Parques Naturales y Reservas",
+    "costoEntrada": true,
+    "duracionVisita": 1.5
+  },
+  {
+    "nombre": "Casa Batlló",
+    "descripcion": "Uno de los edificios más icónicos del modernismo catalán diseñado por Antoni Gaudí, ubicado en el Paseo de Gracia.",
+    "ubicacion": {
+      "_latitude": 41.3916407,
+      "_longitude": 2.1648217
+    },
+    "audioURL": "https://example.com/audio/casa-batllo.mp3",
+    "movilidadReducida": true,
+    "categoria": "Edificios y Arquitectura Moderna",
+    "costoEntrada": true,
+    "duracionVisita": 1
+  },
+  {
+    "nombre": "Museo Picasso",
+    "descripcion": "Un museo dedicado a las obras tempranas de Pablo Picasso, ubicado en el Barrio Gótico de Barcelona.",
+    "ubicacion": {
+      "_latitude": 41.3850639,
+      "_longitude": 2.1801682
+    },
+    "audioURL": "https://example.com/audio/museo-picasso.mp3",
+    "movilidadReducida": true,
+    "categoria": "Museos y Galerías de Arte",
+    "costoEntrada": true,
+    "duracionVisita": 2
+  },
+  {
+    "nombre": "Castillo de Montjuïc",
+    "descripcion": "Una antigua fortaleza militar situada en la colina de Montjuïc con vistas panorámicas de la ciudad de Barcelona.",
+    "ubicacion": {
+      "_latitude": 41.3642556,
+      "_longitude": 2.1643691
+    },
+    "audioURL": "https://example.com/audio/castillo-montjuic.mp3",
+    "movilidadReducida": false,
+    "categoria": "Monumentos Históricos",
+    "costoEntrada": false,
+    "duracionVisita": 1
+  },
+  {
+    "nombre": "Basílica de Santa María del Mar",
+    "descripcion": "Una de las iglesias góticas más importantes de Barcelona, construida entre 1329 y 1383.",
+    "ubicacion": {
+      "_latitude": 41.3839309,
+      "_longitude": 2.1822481
+    },
+    "audioURL": "https://example.com/audio/santa-maria-del-mar.mp3",
+    "movilidadReducida": true,
+    "categoria": "Monumentos Religiosos",
+    "costoEntrada": true,
+    "duracionVisita": 1
+  }
+]
