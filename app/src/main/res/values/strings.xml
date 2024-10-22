@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">VisitPath</string>
+    <string name="app_name" translatable="false">VisitPath</string>
+    <string name="monument_image_desc" translatable="false">Descripción de la imagen del monumento</string>
 </resources>

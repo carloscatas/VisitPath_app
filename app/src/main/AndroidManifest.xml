@@ -16,21 +16,17 @@
         android:theme="@style/Theme.VisitPath"
         tools:targetApi="31">
 
-
-    <activity
-            android:name=".MainMenuActivity"
-            android:exported="false" />
         <activity
-            android:name=".MainActivity"
+            android:name=".MonumentListActivity"
             android:exported="true"
             android:label="VisitPath"
             android:theme="@style/Theme.VisitPath">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>
