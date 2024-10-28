@@ -4,6 +4,7 @@ plugins {
     id("com.google.gms.google-services")
     // Otras configuraciones de plugins
     id("kotlin-kapt")
+    id ("kotlin-parcelize")
 }
 
 android {
@@ -55,6 +56,7 @@ android {
 dependencies {
     // Usa el Firebase BoM para sincronizar versiones
     implementation(platform("com.google.firebase:firebase-bom:33.4.0"))
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
 
     // Solo necesitas estas dependencias de Firebase (sin versiones)
     implementation("com.google.firebase:firebase-analytics")

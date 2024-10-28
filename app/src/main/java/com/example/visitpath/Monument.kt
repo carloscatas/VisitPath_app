@@ -1,19 +1,22 @@
 package com.example.visitpath
 
-import com.google.firebase.firestore.GeoPoint
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 data class Monument(
     val nombre: String = "",
     val descripcion: String = "",
-    val ubicacion: GeoPoint = GeoPoint(0.0, 0.0),
+    val latitud: Double = 0.0,
+    val longitud: Double = 0.0,
     val categoria: String = "",
     val duracionVisita: Double = 0.0,
     val costoEntrada: Boolean = false,
     val movilidadReducida: Boolean = false,
     val imagenURL: String = "",
     val audioURL: String = ""
-)
-{
+) : Parcelable {
     // Constructor vacío requerido por Firestore
-    constructor() : this("", "", GeoPoint(0.0, 0.0), "", 0.0, false, false, "", "")
+    constructor() : this("", "", 0.0, 0.0, "", 0.0, false, false, "", "")
 }
+

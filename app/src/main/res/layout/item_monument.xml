@@ -10,9 +10,7 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="0dp"
-        android:padding="0dp">
+        android:layout_height="wrap_content">
 
         <!-- ImageView para la imagen de fondo -->
         <ImageView
@@ -20,23 +18,12 @@
             android:layout_width="0dp"
             android:layout_height="200dp"
             android:scaleType="centerCrop"
+            android:alpha="0.5"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:alpha="0.7"
             android:contentDescription="@string/monument_image_desc" />
-
-        <!-- View para el degradado oscuro en la parte inferior -->
-        <View
-            android:id="@+id/textBackground"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:background="@drawable/text_background_gradient"
-            app:layout_constraintBottom_toBottomOf="@id/monumentImage"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/monumentName"/>
 
         <!-- TextView para el nombre del monumento -->
         <TextView
@@ -49,8 +36,22 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="4dp"
-            android:layout_marginStart="16dp" />
+            android:layout_margin="16dp" />
+
+        <!-- TextView para la descripción breve del monumento -->
+        <TextView
+            android:id="@+id/monumentDescription"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="#333333"
+            android:maxLines="2"
+            android:ellipsize="end"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/monumentName"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"/>
 
         <!-- TextView para la categoría del monumento -->
         <TextView
@@ -60,10 +61,11 @@
             android:text="Categoría:"
             android:textStyle="bold"
             android:textSize="14sp"
-            android:layout_marginTop="24dp"
+            android:textColor="@android:color/black"
             android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/monumentName"
+            app:layout_constraintTop_toBottomOf="@id/monumentDescription"
             app:layout_constraintEnd_toEndOf="parent" />
 
         <!-- TextView para la duración de la visita -->
@@ -74,6 +76,7 @@
             android:text="Duración de la visita:"
             android:textStyle="bold"
             android:textSize="14sp"
+            android:textColor="@android:color/black"
             android:layout_marginStart="16dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/monumentCategory"
@@ -87,6 +90,7 @@
             android:text="Entrada:"
             android:textStyle="bold"
             android:textSize="14sp"
+            android:textColor="@android:color/black"
             android:layout_marginStart="16dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/monumentDuration"
@@ -100,6 +104,7 @@
             android:text="Accesibilidad PMR:"
             android:textStyle="bold"
             android:textSize="14sp"
+            android:textColor="@android:color/black"
             android:layout_marginStart="16dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/monumentCost"
@@ -113,12 +118,11 @@
             android:text="Audioguía:"
             android:textStyle="bold"
             android:textSize="14sp"
+            android:textColor="@android:color/black"
             android:layout_marginStart="16dp"
-            android:layout_marginBottom="8dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/monumentAccessibility"
             app:layout_constraintEnd_toEndOf="parent" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
 </androidx.cardview.widget.CardView>
