@@ -30,6 +30,11 @@ class MonumentDetailActivity : AppCompatActivity() {
             return
         }
 
+        val backButton = findViewById<ImageView>(R.id.backButton)
+        backButton.setOnClickListener {
+            finish() // Regresar a la actividad anterior
+        }
+
         // Asignar el nombre y detalles del monumento a los elementos de la UI
         findViewById<TextView>(R.id.monumentName).text = monument?.nombre
         findViewById<TextView>(R.id.monumentDetails).text = monument?.descripcion

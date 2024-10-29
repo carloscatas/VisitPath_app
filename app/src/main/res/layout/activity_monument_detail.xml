@@ -1,174 +1,211 @@
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F5F5F5">
 
-    <LinearLayout
-        android:id="@+id/main"
+    <!-- Toolbar con el botón de retroceso -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:background="?attr/colorPrimary"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+        android:popupTheme="@style/ThemeOverlay.AppCompat.Light">
 
-        <!-- Título del monumento -->
-        <TextView
-            android:id="@+id/monumentName"
+        <ImageView
+            android:id="@+id/backButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="26sp"
-            android:textStyle="bold"
-            android:paddingBottom="8dp"
-            android:layout_gravity="center_horizontal"
-            android:textColor="#333333" />
+            android:src="@drawable/ic_back"
+            android:contentDescription="Volver"
+            android:padding="8dp"
+            app:tint="#FFFFFF" />
 
-        <!-- Descripción del monumento -->
         <TextView
-            android:id="@+id/monumentDetails"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="16sp"
-            android:paddingBottom="24dp"
-            android:justificationMode="inter_word"
-            android:textColor="#666666" />
+            android:text="Detalles del Monumento"
+            android:textSize="18sp"
+            android:textColor="#FFFFFF"
+            android:layout_gravity="center_vertical|center_horizontal"
+            android:padding="8dp" />
+    </androidx.appcompat.widget.Toolbar>
 
-        <!-- Sección de detalles del monumento -->
+    <!-- Contenido de la pantalla con el ScrollView debajo del Toolbar -->
+    <ScrollView
+        android:layout_below="@id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
         <LinearLayout
+            android:id="@+id/main"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:background="#E0E0E0"
-            android:padding="16dp"
-            android:layout_marginBottom="24dp"
-            android:layout_marginTop="16dp"
-            android:layout_gravity="center">
+            android:padding="16dp">
 
-            <!-- Categoría -->
-            <LinearLayout
+            <!-- Título del monumento -->
+            <TextView
+                android:id="@+id/monumentName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingBottom="8dp">
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:paddingBottom="8dp"
+                android:layout_gravity="center_horizontal"
+                android:textColor="#333333" />
 
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_category"
-                    android:contentDescription="Categoría Icon" />
-
-                <TextView
-                    android:id="@+id/monumentCategory"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:textSize="16sp"
-                    android:textColor="#333333" />
-            </LinearLayout>
-
-            <!-- Duración -->
-            <LinearLayout
+            <!-- Descripción del monumento -->
+            <TextView
+                android:id="@+id/monumentDetails"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingBottom="8dp">
+                android:textSize="16sp"
+                android:paddingBottom="24dp"
+                android:justificationMode="inter_word"
+                android:textColor="#666666" />
 
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_duration"
-                    android:contentDescription="Duración Icon" />
+            <!-- Sección de detalles del monumento -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/rounded_background"
+                android:padding="16dp"
+                android:layout_marginBottom="24dp"
+                android:layout_marginTop="16dp"
+                android:layout_gravity="center">
 
-                <TextView
-                    android:id="@+id/monumentDuration"
+                <!-- Categoría -->
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:textSize="16sp"
-                    android:textColor="#333333" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_category"
+                        android:contentDescription="Categoría Icon" />
+
+                    <TextView
+                        android:id="@+id/monumentCategory"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:textSize="16sp"
+                        android:textColor="#333333" />
+                </LinearLayout>
+
+                <!-- Duración -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_duration"
+                        android:contentDescription="Duración Icon" />
+
+                    <TextView
+                        android:id="@+id/monumentDuration"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:textSize="16sp"
+                        android:textColor="#333333" />
+                </LinearLayout>
+
+                <!-- Costo -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_cost"
+                        android:contentDescription="Costo Icon" />
+
+                    <TextView
+                        android:id="@+id/monumentCost"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:textSize="16sp"
+                        android:textColor="#333333" />
+                </LinearLayout>
+
+                <!-- Accesibilidad -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingBottom="8dp">
+
+                    <ImageView
+                        android:id="@+id/monumentAccessibilityIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="Accesibilidad Icono"
+                        android:src="@drawable/ic_accessibility"/>
+
+                    <TextView
+                        android:id="@+id/monumentAccessibility"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:textSize="16sp"
+                        android:textColor="#333333" />
+                </LinearLayout>
+
+                <!-- Audioguía -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:src="@drawable/ic_audio"
+                        android:contentDescription="Audioguía Icon" />
+
+                    <TextView
+                        android:id="@+id/monumentAudio"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:textSize="16sp"
+                        android:textColor="#333333" />
+                </LinearLayout>
             </LinearLayout>
 
-            <!-- Costo -->
-            <LinearLayout
+            <!-- Botón para reproducir la audioguía -->
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/playAudioGuideButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingBottom="8dp">
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:src="@drawable/ic_play"
+                android:backgroundTint="#6200EE"
+                android:tint="#FFFFFF"
+                android:contentDescription="Play Audioguía" />
 
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_cost"
-                    android:contentDescription="Costo Icon" />
-
-                <TextView
-                    android:id="@+id/monumentCost"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:textSize="16sp"
-                    android:textColor="#333333" />
-            </LinearLayout>
-
-            <!-- Accesibilidad -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingBottom="8dp">
-
-                <ImageView
-                    android:id="@+id/monumentAccessibilityIcon"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="Accesibilidad Icono"
-                    android:src="@drawable/ic_accessibility"/>
-
-                <TextView
-                    android:id="@+id/monumentAccessibility"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:textSize="16sp"
-                    android:textColor="#333333" />
-            </LinearLayout>
-
-            <!-- Audioguía -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_audio"
-                    android:contentDescription="Audioguía Icon" />
-
-                <TextView
-                    android:id="@+id/monumentAudio"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:textSize="16sp"
-                    android:textColor="#333333" />
-            </LinearLayout>
         </LinearLayout>
-
-        <!-- Botón para reproducir la audioguía -->
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/playAudioGuideButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="16dp"
-            android:src="@drawable/ic_play"
-            android:backgroundTint="#6200EE"
-            android:tint="#FFFFFF"
-            android:contentDescription="Play Audioguía" />
-
-    </LinearLayout>
-</ScrollView>
+    </ScrollView>
+</RelativeLayout>
