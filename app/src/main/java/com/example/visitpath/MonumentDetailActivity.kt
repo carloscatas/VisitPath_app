@@ -4,6 +4,7 @@ import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -37,6 +38,18 @@ class MonumentDetailActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.monumentCost).text = if (monument?.costoEntrada == true) "Entrada: Gratis" else "Entrada: De pago"
         findViewById<TextView>(R.id.monumentAccessibility).text = if (monument?.movilidadReducida == true) "Accesibilidad: Sí" else "Accesibilidad: No"
         findViewById<TextView>(R.id.monumentAudio).text = if (monument?.audioURL?.isNotEmpty() == true) "Audioguía: Sí" else "Audioguía: No"
+
+        // Controlar el icono de accesibilidad
+        val accessibilityTextView = findViewById<TextView>(R.id.monumentAccessibility)
+        val accessibilityIcon = findViewById<ImageView>(R.id.monumentAccessibilityIcon)
+
+        if (monument?.movilidadReducida == true) {
+            accessibilityTextView.text = "Accesibilidad PMR: Sí"
+            accessibilityIcon.setImageResource(R.drawable.ic_accessibility)
+        } else {
+            accessibilityTextView.text = "Accesibilidad PMR: No"
+            accessibilityIcon.setImageResource(R.drawable.ic_not_accessibility)
+        }
 
         /// Configurar el botón para reproducir la audioguía
         val playButton: FloatingActionButton = findViewById(R.id.playAudioGuideButton)
