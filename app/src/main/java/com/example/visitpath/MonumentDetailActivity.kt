@@ -8,17 +8,31 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.bumptech.glide.Glide
+import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
-class MonumentDetailActivity : AppCompatActivity() {
+
+class MonumentDetailActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private var monument: Monument? = null
     private var mediaPlayer: MediaPlayer? = null
     private var isPlaying: Boolean = false // Variable mutable para controlar el estado de reproducción
+    private var map: GoogleMap? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_monument_detail)
+
+        // Inicializar el fragmento de mapa
+        val mapFragment = supportFragmentManager
+            .findFragmentById(R.id.mapFragment) as SupportMapFragment
+        mapFragment.getMapAsync(this)
 
         // Obtener el monumento del intent de forma segura
         monument = intent.getParcelableExtra("monument")
@@ -38,6 +52,13 @@ class MonumentDetailActivity : AppCompatActivity() {
         // Asignar el nombre y detalles del monumento a los elementos de la UI
         findViewById<TextView>(R.id.monumentName).text = monument?.nombre
         findViewById<TextView>(R.id.monumentDetails).text = monument?.descripcion
+
+        val headerImageView = findViewById<ImageView>(R.id.monumentHeaderImage)
+        Glide.with(this)
+            .load(monument?.imagenURL) // Usa el URL o recurso que tengas para la imagen del monumento
+            .into(findViewById(R.id.monumentHeaderImage))
+
+
         findViewById<TextView>(R.id.monumentCategory).text = "Categoría: ${monument?.categoria}"
         findViewById<TextView>(R.id.monumentDuration).text = "Duración: ${monument?.duracionVisita} horas"
         findViewById<TextView>(R.id.monumentCost).text = if (monument?.costoEntrada == true) "Entrada: Gratis" else "Entrada: De pago"
@@ -128,4 +149,19 @@ class MonumentDetailActivity : AppCompatActivity() {
         // Liberar los recursos del MediaPlayer
         releaseMediaPlayer()
     }
+
+    override fun onMapReady(googleMap: GoogleMap) {
+        map = googleMap
+
+        // Verificar si el monumento tiene una ubicación válida
+        if (monument != null && monument?.latitud != 0.0 && monument?.longitud != 0.0) {
+            // Crear una ubicación usando latitud y longitud
+            val location = LatLng(monument!!.latitud, monument!!.longitud)
+            map?.addMarker(MarkerOptions().position(location).title(monument?.nombre))
+            map?.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 15f))
+        } else {
+            Toast.makeText(this, "Ubicación no disponible", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 }

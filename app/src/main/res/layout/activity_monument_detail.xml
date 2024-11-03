@@ -46,6 +46,20 @@
             android:orientation="vertical"
             android:padding="16dp">
 
+            <!-- Imagen del monumento -->
+            <ImageView
+                android:id="@+id/monumentHeaderImage"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:scaleType="centerCrop"
+                android:contentDescription="Imagen del Monumento" />
+
+            <!-- Fondo semitransparente para el título -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#80000000" />
+
             <!-- Título del monumento -->
             <TextView
                 android:id="@+id/monumentName"
@@ -53,7 +67,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="26sp"
                 android:textStyle="bold"
-                android:paddingBottom="8dp"
+                android:paddingBottom="16dp"
                 android:layout_gravity="center_horizontal"
                 android:textColor="#333333" />
 
@@ -62,9 +76,11 @@
                 android:id="@+id/monumentDetails"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
                 android:textSize="16sp"
                 android:paddingBottom="24dp"
-                android:justificationMode="inter_word"
+                android:lineSpacingMultiplier="1.1"
+                android:layout_marginTop="8dp"
                 android:textColor="#666666" />
 
             <!-- Sección de detalles del monumento -->
@@ -205,6 +221,14 @@
                 android:backgroundTint="#6200EE"
                 android:tint="#FFFFFF"
                 android:contentDescription="Play Audioguía" />
+
+            <!-- Fragmento de mapa para mostrar la ubicación del monumento -->
+            <fragment
+                android:id="@+id/mapFragment"
+                android:name="com.google.android.gms.maps.SupportMapFragment"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_marginTop="16dp"/>
 
         </LinearLayout>
     </ScrollView>
