@@ -5,6 +5,8 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.transition.Fade
 import android.util.Log
+import android.view.LayoutInflater
+import android.widget.CheckBox
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -65,12 +67,104 @@ class MonumentListActivity : AppCompatActivity() {
         val filterDialog = AlertDialog.Builder(this)
         filterDialog.setTitle("Selecciona Filtros")
 
-        val inflater = layoutInflater
+        val inflater = LayoutInflater.from(this)
         val dialogLayout = inflater.inflate(R.layout.dialog_filter_options, null)
         filterDialog.setView(dialogLayout)
 
+        // Inicializar los checkboxes con el estado actual de los filtros seleccionados
+
+        // Configuración de categorías
+        val categoryCheckboxes = listOf(
+            dialogLayout.findViewById<CheckBox>(R.id.checkbox_natural_parks),
+            dialogLayout.findViewById<CheckBox>(R.id.checkbox_museums),
+            dialogLayout.findViewById<CheckBox>(R.id.checkbox_historic_monuments),
+            dialogLayout.findViewById<CheckBox>(R.id.checkbox_religious_monuments),
+            dialogLayout.findViewById<CheckBox>(R.id.checkbox_modern_architecture),
+            dialogLayout.findViewById<CheckBox>(R.id.checkbox_cultural_attractions),
+            dialogLayout.findViewById<CheckBox>(R.id.checkbox_urban_zones),
+            dialogLayout.findViewById<CheckBox>(R.id.checkbox_natural_landscapes)
+        )
+
+        val categories = listOf(
+            "Parques Naturales y Reservas",
+            "Museos y Galerías de Arte",
+            "Monumentos Históricos",
+            "Monumentos Religiosos",
+            "Edificios y Arquitectura Moderna",
+            "Atracciones Culturales",
+            "Zonas Urbanas y Barrios Históricos",
+            "Paisajes Naturales"
+        )
+
+        // Actualizar el estado de los checkboxes de categorías según los filtros seleccionados
+        for (i in categoryCheckboxes.indices) {
+            categoryCheckboxes[i].isChecked = selectedCategories.contains(categories[i])
+        }
+
+        // Configuración de duración
+        val durationCheckboxes = listOf(
+            dialogLayout.findViewById<CheckBox>(R.id.checkbox_duration_less_1),
+            dialogLayout.findViewById<CheckBox>(R.id.checkbox_duration_1_2),
+            dialogLayout.findViewById<CheckBox>(R.id.checkbox_duration_2_4),
+            dialogLayout.findViewById<CheckBox>(R.id.checkbox_duration_more_4)
+        )
+
+        val durations = listOf("Menos de 1h", "Entre 1 y 2h", "Entre 2 y 4h", "Más de 4h")
+        for (i in durationCheckboxes.indices) {
+            durationCheckboxes[i].isChecked = selectedDurations.contains(durations[i])
+        }
+
+        // Configuración de accesibilidad, entrada y audioguía
+        val checkBoxAccessibilityYes = dialogLayout.findViewById<CheckBox>(R.id.checkbox_accessibility_yes)
+        val checkBoxAccessibilityNo = dialogLayout.findViewById<CheckBox>(R.id.checkbox_accessibility_no)
+        val checkBoxEntryFree = dialogLayout.findViewById<CheckBox>(R.id.checkbox_entry_free)
+        val checkBoxEntryPaid = dialogLayout.findViewById<CheckBox>(R.id.checkbox_entry_paid)
+        val checkBoxAudioYes = dialogLayout.findViewById<CheckBox>(R.id.checkbox_audio_yes)
+        val checkBoxAudioNo = dialogLayout.findViewById<CheckBox>(R.id.checkbox_audio_no)
+
+        // Actualizar el estado de los checkboxes según los filtros seleccionados
+        checkBoxAccessibilityYes.isChecked = selectedAccessibility == "Sí"
+        checkBoxAccessibilityNo.isChecked = selectedAccessibility == "No"
+        checkBoxEntryFree.isChecked = selectedEntry == "Gratuita"
+        checkBoxEntryPaid.isChecked = selectedEntry == "De pago"
+        checkBoxAudioYes.isChecked = selectedAudioGuide == "Sí"
+        checkBoxAudioNo.isChecked = selectedAudioGuide == "No"
+
         // Configurar el botón de aplicar
         filterDialog.setPositiveButton("Aplicar") { dialog, _ ->
+            // Guardar los valores seleccionados en los filtros
+            selectedCategories.clear()
+            for (i in categoryCheckboxes.indices) {
+                if (categoryCheckboxes[i].isChecked) {
+                    selectedCategories.add(categories[i])
+                }
+            }
+
+            selectedDurations.clear()
+            for (i in durationCheckboxes.indices) {
+                if (durationCheckboxes[i].isChecked) {
+                    selectedDurations.add(durations[i])
+                }
+            }
+
+            selectedAccessibility = when {
+                checkBoxAccessibilityYes.isChecked -> "Sí"
+                checkBoxAccessibilityNo.isChecked -> "No"
+                else -> null
+            }
+
+            selectedEntry = when {
+                checkBoxEntryFree.isChecked -> "Gratuita"
+                checkBoxEntryPaid.isChecked -> "De pago"
+                else -> null
+            }
+
+            selectedAudioGuide = when {
+                checkBoxAudioYes.isChecked -> "Sí"
+                checkBoxAudioNo.isChecked -> "No"
+                else -> null
+            }
+
             applyFilters()
             dialog.dismiss()
         }
@@ -83,6 +177,7 @@ class MonumentListActivity : AppCompatActivity() {
 
         filterDialog.show()
     }
+
 
     private fun applyFilters() {
         // Aplicar los filtros seleccionados a la lista de monumentos

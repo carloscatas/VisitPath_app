@@ -9,7 +9,7 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Categoría -->
+        <!-- Título de Categoría -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -18,49 +18,56 @@
             android:textStyle="bold"
             android:paddingBottom="8dp" />
 
-        <LinearLayout
-            android:id="@+id/categoryOptions"
-            android:layout_width="match_parent"
+        <!-- Checkboxes de Categoría -->
+        <CheckBox
+            android:id="@+id/checkbox_natural_parks"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:text="Parques Naturales y Reservas" />
 
-            <!-- Ejemplo de opción de categoría -->
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Parques Naturales y Reservas" />
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Museos y Galerías de Arte" />
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Monumentos Históricos" />
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Monumentos Religiosos" />
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Edificios y Arquitectura Moderna" />
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Atracciones Culturales" />
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Zonas Urbanas y Barrios Históricos" />
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Paisajes Naturales" />
+        <CheckBox
+            android:id="@+id/checkbox_museums"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Museos y Galerías de Arte" />
 
-        </LinearLayout>
+        <CheckBox
+            android:id="@+id/checkbox_historic_monuments"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Monumentos Históricos" />
 
-        <!-- Duración de la visita -->
+        <CheckBox
+            android:id="@+id/checkbox_religious_monuments"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Monumentos Religiosos" />
+
+        <CheckBox
+            android:id="@+id/checkbox_modern_architecture"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Edificios y Arquitectura Moderna" />
+
+        <CheckBox
+            android:id="@+id/checkbox_cultural_attractions"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Atracciones Culturales" />
+
+        <CheckBox
+            android:id="@+id/checkbox_urban_zones"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Zonas Urbanas y Barrios Históricos" />
+
+        <CheckBox
+            android:id="@+id/checkbox_natural_landscapes"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Paisajes Naturales" />
+
+        <!-- Título de Duración de Visita -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -70,31 +77,32 @@
             android:paddingTop="16dp"
             android:paddingBottom="8dp" />
 
-        <LinearLayout
-            android:id="@+id/durationOptions"
-            android:layout_width="match_parent"
+        <!-- Checkboxes de Duración -->
+        <CheckBox
+            android:id="@+id/checkbox_duration_less_1"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:text="Menos de 1h" />
 
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Menos de 1h" />
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Entre 1 y 2h" />
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Entre 2 y 4h" />
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Más de 4h" />
-        </LinearLayout>
+        <CheckBox
+            android:id="@+id/checkbox_duration_1_2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Entre 1 y 2h" />
 
-        <!-- Entrada -->
+        <CheckBox
+            android:id="@+id/checkbox_duration_2_4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Entre 2 y 4h" />
+
+        <CheckBox
+            android:id="@+id/checkbox_duration_more_4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Más de 4h" />
+
+        <!-- Título de Entrada -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -104,23 +112,20 @@
             android:paddingTop="16dp"
             android:paddingBottom="8dp" />
 
-        <LinearLayout
-            android:id="@+id/entryOptions"
-            android:layout_width="match_parent"
+        <!-- Checkboxes de Entrada -->
+        <CheckBox
+            android:id="@+id/checkbox_entry_free"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:text="Gratuita" />
 
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Gratuita" />
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="De pago" />
-        </LinearLayout>
+        <CheckBox
+            android:id="@+id/checkbox_entry_paid"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="De pago" />
 
-        <!-- Accesibilidad PMR -->
+        <!-- Título de Accesibilidad PMR -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -130,23 +135,20 @@
             android:paddingTop="16dp"
             android:paddingBottom="8dp" />
 
-        <LinearLayout
-            android:id="@+id/accessibilityOptions"
-            android:layout_width="match_parent"
+        <!-- Checkboxes de Accesibilidad -->
+        <CheckBox
+            android:id="@+id/checkbox_accessibility_yes"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:text="Sí" />
 
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Sí" />
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="No" />
-        </LinearLayout>
+        <CheckBox
+            android:id="@+id/checkbox_accessibility_no"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No" />
 
-        <!-- Audioguía -->
+        <!-- Título de Audioguía -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -156,20 +158,17 @@
             android:paddingTop="16dp"
             android:paddingBottom="8dp" />
 
-        <LinearLayout
-            android:id="@+id/audioGuideOptions"
-            android:layout_width="match_parent"
+        <!-- Checkboxes de Audioguía -->
+        <CheckBox
+            android:id="@+id/checkbox_audio_yes"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:text="Sí" />
 
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Sí" />
-            <CheckBox
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="No" />
-        </LinearLayout>
+        <CheckBox
+            android:id="@+id/checkbox_audio_no"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No" />
     </LinearLayout>
 </ScrollView>
