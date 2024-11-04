@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/filter_category"
+        android:title="Filtrar por Categoría" />
+    <item
+        android:id="@+id/filter_cost"
+        android:title="Filtrar por Costo de Entrada" />
+    <item
+        android:id="@+id/filter_duration"
+        android:title="Filtrar por Duración de Visita" />
+    <item
+        android:id="@+id/filter_accessibility"
+        android:title="Filtrar por Movilidad Reducida" />
+    <item
+        android:id="@+id/filter_distance"
+        android:title="Filtrar por Radio de Distancia" />
+    <item
+        android:id="@+id/filter_reset"
+        android:title="Reestablecer Filtros" />
+</menu>

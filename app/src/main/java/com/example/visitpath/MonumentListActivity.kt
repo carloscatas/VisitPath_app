@@ -5,6 +5,9 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.transition.Fade
 import android.util.Log
+import android.widget.ImageButton
+import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -22,6 +25,15 @@ class MonumentListActivity : AppCompatActivity() {
     private lateinit var monumentAdapter: MonumentAdapter
     private val db = FirebaseFirestore.getInstance()
     private val LOCATION_PERMISSION_REQUEST_CODE = 1000
+    private lateinit var monumentList: MutableList<Monument> // Lista completa de monumentos
+    private var filteredMonuments: MutableList<Monument> = mutableListOf() // Lista para los monumentos filtrados
+
+    // Variables para almacenar los filtros seleccionados
+    private val selectedCategories = mutableListOf<String>()
+    private val selectedDurations = mutableListOf<String>()
+    private var selectedEntry: String? = null
+    private var selectedAccessibility: String? = null
+    private var selectedAudioGuide: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         window.enterTransition = Fade()
@@ -35,7 +47,86 @@ class MonumentListActivity : AppCompatActivity() {
         monumentAdapter = MonumentAdapter(mutableListOf())
         recyclerView.adapter = monumentAdapter
 
+        // Configurar el botón de filtro
+        val filterButton: ImageButton = findViewById(R.id.filterButton)
+        val filterText: TextView = findViewById(R.id.filterText)
+
+        val openFilterDialog = {
+            showFilterDialog()
+        }
+
+        filterButton.setOnClickListener { openFilterDialog() }
+        filterText.setOnClickListener { openFilterDialog() }
+
         requestLocationPermission()
+    }
+
+    private fun showFilterDialog() {
+        val filterDialog = AlertDialog.Builder(this)
+        filterDialog.setTitle("Selecciona Filtros")
+
+        val inflater = layoutInflater
+        val dialogLayout = inflater.inflate(R.layout.dialog_filter_options, null)
+        filterDialog.setView(dialogLayout)
+
+        // Configurar el botón de aplicar
+        filterDialog.setPositiveButton("Aplicar") { dialog, _ ->
+            applyFilters()
+            dialog.dismiss()
+        }
+
+        // Configurar el botón de reestablecer
+        filterDialog.setNeutralButton("Reestablecer") { dialog, _ ->
+            resetFilters()
+            dialog.dismiss()
+        }
+
+        filterDialog.show()
+    }
+
+    private fun applyFilters() {
+        // Aplicar los filtros seleccionados a la lista de monumentos
+        filteredMonuments = monumentList.filter { monument ->
+            // Filtrar por categoría
+            val matchesCategory = selectedCategories.isEmpty() || selectedCategories.contains(monument.categoria)
+            // Filtrar por duración
+            val matchesDuration = selectedDurations.isEmpty() ||
+                    (selectedDurations.contains("Menos de 1h") && monument.duracionVisita < 1) ||
+                    (selectedDurations.contains("Entre 1 y 2h") && monument.duracionVisita in 1.0..2.0) ||
+                    (selectedDurations.contains("Entre 2 y 4h") && monument.duracionVisita in 2.0..4.0) ||
+                    (selectedDurations.contains("Más de 4h") && monument.duracionVisita > 4)
+
+            // Filtrar por entrada
+            val matchesEntry = selectedEntry == null ||
+                    (selectedEntry == "Gratuita" && monument.costoEntrada) ||
+                    (selectedEntry == "De pago" && !monument.costoEntrada)
+
+            // Filtrar por accesibilidad
+            val matchesAccessibility = selectedAccessibility == null ||
+                    (selectedAccessibility == "Sí" && monument.movilidadReducida) ||
+                    (selectedAccessibility == "No" && !monument.movilidadReducida)
+            // Filtrar por audioguía
+            val matchesAudioGuide = selectedAudioGuide == null ||
+                    (selectedAudioGuide == "Sí" && monument.audioURL.isNotEmpty()) ||
+                    (selectedAudioGuide == "No" && monument.audioURL.isEmpty())
+
+            matchesCategory && matchesDuration && matchesEntry && matchesAccessibility && matchesAudioGuide
+        }.toMutableList()
+
+        monumentAdapter.updateData(filteredMonuments)
+    }
+
+    private fun resetFilters() {
+        // Restablecer todas las opciones de filtro
+        selectedCategories.clear()
+        selectedDurations.clear()
+        selectedEntry = null
+        selectedAccessibility = null
+        selectedAudioGuide = null
+
+        // Mostrar todos los monumentos sin filtros
+        filteredMonuments = monumentList
+        monumentAdapter.updateData(filteredMonuments)
     }
 
     private fun requestLocationPermission() {
@@ -113,54 +204,32 @@ class MonumentListActivity : AppCompatActivity() {
     }
 
     private fun fetchMonumentsFromFirestore(userLocation: GeoPoint) {
-        Log.d("Firestore", "Intentando obtener monumentos desde Firestore...")
+        db.collection("monumentos").addSnapshotListener { snapshot, e ->
+            if (e != null) return@addSnapshotListener
+            if (snapshot != null && !snapshot.isEmpty) {
+                monumentList = snapshot.documents.mapNotNull { document ->
+                    val data = document.data
+                    val geoPoint = data?.get("ubicacion") as? GeoPoint
+                    if (geoPoint != null) {
+                        Monument(
+                            nombre = data["nombre"] as? String ?: "Desconocido",
+                            descripcion = data["descripcion"] as? String ?: "",
+                            categoria = data["categoria"] as? String ?: "",
+                            duracionVisita = (data["duracionVisita"] as? Number)?.toDouble() ?: 0.0,
+                            costoEntrada = data["costoEntrada"] as? Boolean ?: false,
+                            movilidadReducida = data["movilidadReducida"] as? Boolean ?: false,
+                            imagenURL = data["imagenURL"] as? String ?: "",
+                            audioURL = data["audioURL"] as? String ?: "",
+                            latitud = geoPoint.latitude,
+                            longitud = geoPoint.longitude
+                        )
+                    } else null
+                }.toMutableList()
 
-        db.collection("monumentos")
-            .addSnapshotListener { snapshot, e ->
-                if (e != null) {
-                    Log.w("Firestore", "Error en la solicitud a Firestore: ", e)
-                    return@addSnapshotListener
-                }
-
-                if (snapshot != null && !snapshot.isEmpty) {
-                    val monumentList = mutableListOf<Monument>()
-                    Log.d("Firestore", "Cantidad de documentos recibidos: ${snapshot.size()}")
-
-                    for (document in snapshot.documents) {
-                        val data = document.data
-                        val geoPoint = data?.get("ubicacion") as? GeoPoint
-                        val duracionVisita = (data?.get("duracionVisita") as? Double)
-                            ?: (data?.get("duracionVisita") as? Long)?.toDouble() ?: 0.0
-
-                        if (geoPoint != null) {
-                            val monument = Monument(
-                                nombre = data["nombre"] as? String ?: "Desconocido",
-                                descripcion = data["descripcion"] as? String ?: "",
-                                categoria = data["categoria"] as? String ?: "",
-                                duracionVisita = duracionVisita,
-                                costoEntrada = data["costoEntrada"] as? Boolean ?: false,
-                                movilidadReducida = data["movilidadReducida"] as? Boolean ?: false,
-                                imagenURL = data["imagenURL"] as? String ?: "",
-                                audioURL = data["audioURL"] as? String ?: "",
-                                latitud = geoPoint.latitude,
-                                longitud = geoPoint.longitude,
-                            )
-                            monumentList.add(monument)
-                        } else {
-                            Log.e("Firestore", "Error: El campo 'ubicacion' no es un GeoPoint en el documento con ID ${document.id}")
-                        }
-                    }
-
-                    if (monumentList.isNotEmpty()) {
-                        monumentList.sortBy { calculateDistance(userLocation, GeoPoint(it.latitud, it.longitud)) }
-                        Log.d("Firestore", "Total monumentos después de ordenar: ${monumentList.size}")
-                        monumentAdapter.updateData(monumentList)
-                    } else {
-                        Log.d("Firestore", "No se recibieron monumentos de Firestore")
-                    }
-                } else {
-                    Log.d("Firestore", "No se recibieron documentos en tiempo real")
-                }
+                monumentList = monumentList.sortedBy { calculateDistance(userLocation, GeoPoint(it.latitud, it.longitud)) }.toMutableList()
+                filteredMonuments = monumentList
+                monumentAdapter.updateData(filteredMonuments)
             }
+        }
     }
 }
