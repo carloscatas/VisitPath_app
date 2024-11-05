@@ -8,6 +8,10 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.widget.CheckBox
 import android.widget.ImageButton
+import android.widget.LinearLayout
+import android.widget.RadioButton
+import android.widget.RadioGroup
+import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -29,6 +33,10 @@ class MonumentListActivity : AppCompatActivity() {
     private val LOCATION_PERMISSION_REQUEST_CODE = 1000
     private lateinit var monumentList: MutableList<Monument> // Lista completa de monumentos
     private var filteredMonuments: MutableList<Monument> = mutableListOf() // Lista para los monumentos filtrados
+    private var selectedRadius: Int = 0
+    private var selectedLocationType: String = "Ubicación Actual" // O "Ubicación Manual"
+    private var selectedTransportType: String? = null
+    private var userLocation: GeoPoint? = null
 
     // Variables para almacenar los filtros seleccionados
     private val selectedCategories = mutableListOf<String>()
@@ -52,6 +60,12 @@ class MonumentListActivity : AppCompatActivity() {
         // Configurar el botón de filtro
         val filterButton: ImageButton = findViewById(R.id.filterButton)
         val filterText: TextView = findViewById(R.id.filterText)
+        val locationSelector: LinearLayout = findViewById(R.id.locationSelector)
+        val locationText: TextView = findViewById(R.id.locationText)
+
+        locationSelector.setOnClickListener {
+            // TODO: Abrir pantalla de selección de ubicación (Autocomplete de Google Maps)
+        }
 
         val openFilterDialog = {
             showFilterDialog()
@@ -71,7 +85,38 @@ class MonumentListActivity : AppCompatActivity() {
         val dialogLayout = inflater.inflate(R.layout.dialog_filter_options, null)
         filterDialog.setView(dialogLayout)
 
-        // Inicializar los checkboxes con el estado actual de los filtros seleccionados
+
+        // Configuración del radio de actuación
+        val radiusSeekBar = dialogLayout.findViewById<SeekBar>(R.id.radiusSeekBar)
+        val radiusTextView = dialogLayout.findViewById<TextView>(R.id.radiusTextView)
+
+        radiusSeekBar.progress = selectedRadius
+        radiusTextView.text = "$selectedRadius km"
+
+        radiusSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                selectedRadius = progress
+                radiusTextView.text = "$progress km"
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        // Configuración del tipo de transporte
+        val transportRadioGroup = dialogLayout.findViewById<RadioGroup>(R.id.transportRadioGroup)
+        val radioPrivateTransport = dialogLayout.findViewById<RadioButton>(R.id.radio_private_transport)
+        val radioPublicTransport = dialogLayout.findViewById<RadioButton>(R.id.radio_public_transport)
+
+        // Restaurar selección anterior
+        selectedTransportType?.let {
+            if (it == "Privado") radioPrivateTransport.isChecked = true
+            if (it == "Público") radioPublicTransport.isChecked = true
+        }
+
+        transportRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+            selectedTransportType = if (checkedId == R.id.radio_private_transport) "Privado" else "Público"
+        }
 
         // Configuración de categorías
         val categoryCheckboxes = listOf(
@@ -178,36 +223,47 @@ class MonumentListActivity : AppCompatActivity() {
         filterDialog.show()
     }
 
-
     private fun applyFilters() {
-        // Aplicar los filtros seleccionados a la lista de monumentos
-        filteredMonuments = monumentList.filter { monument ->
-            // Filtrar por categoría
-            val matchesCategory = selectedCategories.isEmpty() || selectedCategories.contains(monument.categoria)
-            // Filtrar por duración
-            val matchesDuration = selectedDurations.isEmpty() ||
-                    (selectedDurations.contains("Menos de 1h") && monument.duracionVisita < 1) ||
-                    (selectedDurations.contains("Entre 1 y 2h") && monument.duracionVisita in 1.0..2.0) ||
-                    (selectedDurations.contains("Entre 2 y 4h") && monument.duracionVisita in 2.0..4.0) ||
-                    (selectedDurations.contains("Más de 4h") && monument.duracionVisita > 4)
+        // Verificar si ningún filtro está seleccionado (categorías, duración, entrada, etc.)
+        val noFiltersSelected = selectedCategories.isEmpty() &&
+                selectedDurations.isEmpty() &&
+                selectedEntry == null &&
+                selectedAccessibility == null &&
+                selectedAudioGuide == null &&
+                selectedRadius == 0
 
-            // Filtrar por entrada
-            val matchesEntry = selectedEntry == null ||
-                    (selectedEntry == "Gratuita" && monument.costoEntrada) ||
-                    (selectedEntry == "De pago" && !monument.costoEntrada)
+        // Si no hay filtros seleccionados, mostramos todos los monumentos ordenados por cercanía
+        filteredMonuments = if (noFiltersSelected) {
+            monumentList.sortedBy { monument ->
+                userLocation?.let { calculateDistance(it, GeoPoint(monument.latitud, monument.longitud)) } ?: 0.0
+            }.toMutableList()
+        } else {
+            // Aquí aplicaríamos la lógica de filtros si hay filtros seleccionados
+            monumentList.filter { monument ->
+                // Mantener la lógica de cada filtro aquí
+                val matchesCategory = selectedCategories.isEmpty() || selectedCategories.contains(monument.categoria)
+                val matchesDuration = selectedDurations.isEmpty() ||
+                        (selectedDurations.contains("Menos de 1h") && monument.duracionVisita < 1) ||
+                        (selectedDurations.contains("Entre 1 y 2h") && monument.duracionVisita in 1.0..2.0) ||
+                        (selectedDurations.contains("Entre 2 y 4h") && monument.duracionVisita in 2.0..4.0) ||
+                        (selectedDurations.contains("Más de 4h") && monument.duracionVisita > 4)
+                val matchesEntry = selectedEntry == null || (selectedEntry == "Gratuita" && monument.costoEntrada) || (selectedEntry == "De pago" && !monument.costoEntrada)
+                val matchesAccessibility = selectedAccessibility == null || (selectedAccessibility == "Sí" && monument.movilidadReducida) || (selectedAccessibility == "No" && !monument.movilidadReducida)
+                val matchesAudioGuide = selectedAudioGuide == null || (selectedAudioGuide == "Sí" && monument.audioURL.isNotEmpty()) || (selectedAudioGuide == "No" && monument.audioURL.isEmpty())
+                val distance = userLocation?.let { calculateDistance(it, GeoPoint(monument.latitud, monument.longitud)) }
+                val matchesRadius = if (selectedRadius > 0) {
+                    val distance = userLocation?.let { calculateDistance(it, GeoPoint(monument.latitud, monument.longitud)) }
+                    distance != null && distance <= selectedRadius
+                } else {
+                    true // Ignora el filtro de radio si selectedRadius es 0
+                }
+                // Combinar todos los filtros
+                matchesCategory && matchesDuration && matchesEntry && matchesAccessibility && matchesAudioGuide && matchesRadius
+            }.toMutableList()
+        }
 
-            // Filtrar por accesibilidad
-            val matchesAccessibility = selectedAccessibility == null ||
-                    (selectedAccessibility == "Sí" && monument.movilidadReducida) ||
-                    (selectedAccessibility == "No" && !monument.movilidadReducida)
-            // Filtrar por audioguía
-            val matchesAudioGuide = selectedAudioGuide == null ||
-                    (selectedAudioGuide == "Sí" && monument.audioURL.isNotEmpty()) ||
-                    (selectedAudioGuide == "No" && monument.audioURL.isEmpty())
-
-            matchesCategory && matchesDuration && matchesEntry && matchesAccessibility && matchesAudioGuide
-        }.toMutableList()
-
+        // Calcula los tiempos de la ruta en función de los monumentos filtrados y el transporte seleccionado
+        calculateRouteTimes()
         monumentAdapter.updateData(filteredMonuments)
     }
 
@@ -218,6 +274,9 @@ class MonumentListActivity : AppCompatActivity() {
         selectedEntry = null
         selectedAccessibility = null
         selectedAudioGuide = null
+        selectedRadius = 0
+        selectedLocationType = "Ubicación Actual"
+        selectedTransportType = null
 
         // Mostrar todos los monumentos sin filtros
         filteredMonuments = monumentList
@@ -269,8 +328,8 @@ class MonumentListActivity : AppCompatActivity() {
                 val newLocation = locationResult.lastLocation
                 if (newLocation != null) {
                     Log.d("Location", "Ubicación obtenida: Latitud: ${newLocation.latitude}, Longitud: ${newLocation.longitude}")
-                    val userLocation = GeoPoint(newLocation.latitude, newLocation.longitude)
-                    fetchMonumentsFromFirestore(userLocation)
+                    userLocation = GeoPoint(newLocation.latitude, newLocation.longitude)
+                    fetchMonumentsFromFirestore(userLocation!!)
                     fusedLocationProviderClient.removeLocationUpdates(this)
                 }
             }
@@ -297,6 +356,42 @@ class MonumentListActivity : AppCompatActivity() {
         val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
         return earthRadius * c
     }
+    // Simulamos la velocidad promedio en km/h
+    private val AVERAGE_SPEED_PUBLIC_TRANSPORT = 20.0  // En km/h
+    private val AVERAGE_SPEED_PRIVATE_TRANSPORT = 60.0 // En km/h
+
+    // Función para calcular el tiempo de desplazamiento en función del tipo de transporte y la distancia
+    private fun calculateTravelTime(distanceKm: Double): Double {
+        return if (selectedTransportType == "Público") {
+            distanceKm / AVERAGE_SPEED_PUBLIC_TRANSPORT
+        } else {
+            distanceKm / AVERAGE_SPEED_PRIVATE_TRANSPORT
+        }
+    }
+
+    private fun calculateRouteTimes() {
+        var totalTime = 0.0
+
+        for (i in 0 until filteredMonuments.size - 1) {
+            val startMonument = filteredMonuments[i]
+            val endMonument = filteredMonuments[i + 1]
+
+            // Calcula la distancia entre dos monumentos
+            val distance = calculateDistance(
+                GeoPoint(startMonument.latitud, startMonument.longitud),
+                GeoPoint(endMonument.latitud, endMonument.longitud)
+            )
+
+            // Calcula el tiempo de desplazamiento basado en el tipo de transporte
+            val travelTime = calculateTravelTime(distance)
+            totalTime += travelTime
+
+        }
+
+        // Muestra o utiliza el tiempo total estimado para la ruta
+        Log.d("Route", "Tiempo total estimado para la ruta: $totalTime horas")
+    }
+
 
     private fun fetchMonumentsFromFirestore(userLocation: GeoPoint) {
         db.collection("monumentos").addSnapshotListener { snapshot, e ->

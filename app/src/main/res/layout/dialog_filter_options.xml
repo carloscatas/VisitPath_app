@@ -9,6 +9,59 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- Radio de Actuación -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Radio de actuación (km)"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:paddingTop="16dp"
+            android:paddingBottom="8dp" />
+
+        <SeekBar
+            android:id="@+id/radiusSeekBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="300" />
+
+        <TextView
+            android:id="@+id/radiusTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="4dp"
+            android:text="0 km"
+            android:textSize="14sp" />
+
+        <!-- Medio de Transporte -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Medio de Transporte"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:paddingTop="16dp"
+            android:paddingBottom="8dp" />
+
+        <RadioGroup
+            android:id="@+id/transportRadioGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <RadioButton
+                android:id="@+id/radio_private_transport"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Privado" />
+
+            <RadioButton
+                android:id="@+id/radio_public_transport"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Público" />
+        </RadioGroup>
+
         <!-- Título de Categoría -->
         <TextView
             android:layout_width="wrap_content"
