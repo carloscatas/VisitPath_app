@@ -1,14 +1,15 @@
 package com.example.visitpath
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.os.Bundle
 import android.transition.Fade
 import android.util.Log
 import android.view.LayoutInflater
 import android.widget.CheckBox
 import android.widget.ImageButton
-import android.widget.LinearLayout
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.SeekBar
@@ -22,8 +23,14 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.AutocompleteActivity
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
+import java.util.Locale
 
 class MonumentListActivity : AppCompatActivity() {
 
@@ -31,10 +38,10 @@ class MonumentListActivity : AppCompatActivity() {
     private lateinit var monumentAdapter: MonumentAdapter
     private val db = FirebaseFirestore.getInstance()
     private val LOCATION_PERMISSION_REQUEST_CODE = 1000
+    private val AUTOCOMPLETE_REQUEST_CODE = 1
     private lateinit var monumentList: MutableList<Monument> // Lista completa de monumentos
     private var filteredMonuments: MutableList<Monument> = mutableListOf() // Lista para los monumentos filtrados
     private var selectedRadius: Int = 0
-    private var selectedLocationType: String = "Ubicación Actual" // O "Ubicación Manual"
     private var selectedTransportType: String? = null
     private var userLocation: GeoPoint? = null
 
@@ -44,28 +51,29 @@ class MonumentListActivity : AppCompatActivity() {
     private var selectedEntry: String? = null
     private var selectedAccessibility: String? = null
     private var selectedAudioGuide: String? = null
+    private lateinit var locationText: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         window.enterTransition = Fade()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_monument_list)
 
-        Log.d("ActivityLifecycle", "MonumentListActivity started")
+        // Inicializar Google Places
+        Places.initialize(applicationContext, "AIzaSyBRqF8SOEk36xfS8HWiFE5AJ2aIopQhTnE")
+
 
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
         monumentAdapter = MonumentAdapter(mutableListOf())
         recyclerView.adapter = monumentAdapter
 
+        locationText = findViewById(R.id.locationText)
+
+        getLocationAndUpdateTextView()
+
         // Configurar el botón de filtro
         val filterButton: ImageButton = findViewById(R.id.filterButton)
         val filterText: TextView = findViewById(R.id.filterText)
-        val locationSelector: LinearLayout = findViewById(R.id.locationSelector)
-        val locationText: TextView = findViewById(R.id.locationText)
-
-        locationSelector.setOnClickListener {
-            // TODO: Abrir pantalla de selección de ubicación (Autocomplete de Google Maps)
-        }
 
         val openFilterDialog = {
             showFilterDialog()
@@ -77,6 +85,55 @@ class MonumentListActivity : AppCompatActivity() {
         requestLocationPermission()
     }
 
+    private fun openLocationSearch() {
+        val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS)
+        val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fields).build(this)
+        startActivityForResult(intent, AUTOCOMPLETE_REQUEST_CODE)
+    }
+
+    private fun getLocationAndUpdateTextView() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+            fusedLocationProviderClient.lastLocation.addOnSuccessListener { location ->
+                if (location != null) {
+                    val geocoder = Geocoder(this, Locale.getDefault())
+                    val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                    if (!addresses.isNullOrEmpty()) {
+                        val address = addresses[0]
+                        locationText.text = "${address.thoroughfare} ${address.featureName}"
+                        userLocation = GeoPoint(location.latitude, location.longitude)
+                    }
+                } else {
+                    locationText.text = "Ubicación desconocida"
+                }
+            }
+        } else {
+            requestLocationPermission()
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == AUTOCOMPLETE_REQUEST_CODE) {
+            when (resultCode) {
+                RESULT_OK -> {
+                    val place = Autocomplete.getPlaceFromIntent(data!!)
+                    locationText.text = place.address // Actualiza el globo con la nueva dirección
+                    userLocation = GeoPoint(place.latLng!!.latitude, place.latLng!!.longitude)
+                    applyFilters() // Actualizar la lista de monumentos basándose en la nueva ubicación
+                }
+                AutocompleteActivity.RESULT_ERROR -> {
+                    val status = Autocomplete.getStatusFromIntent(data!!)
+                    Log.i("Location", "Error: ${status.statusMessage}")
+                }
+                RESULT_CANCELED -> {
+                    // El usuario canceló la operación
+                }
+            }
+        }
+    }
+
+
     private fun showFilterDialog() {
         val filterDialog = AlertDialog.Builder(this)
         filterDialog.setTitle("Selecciona Filtros")
@@ -84,7 +141,6 @@ class MonumentListActivity : AppCompatActivity() {
         val inflater = LayoutInflater.from(this)
         val dialogLayout = inflater.inflate(R.layout.dialog_filter_options, null)
         filterDialog.setView(dialogLayout)
-
 
         // Configuración del radio de actuación
         val radiusSeekBar = dialogLayout.findViewById<SeekBar>(R.id.radiusSeekBar)
@@ -250,7 +306,6 @@ class MonumentListActivity : AppCompatActivity() {
                 val matchesEntry = selectedEntry == null || (selectedEntry == "Gratuita" && monument.costoEntrada) || (selectedEntry == "De pago" && !monument.costoEntrada)
                 val matchesAccessibility = selectedAccessibility == null || (selectedAccessibility == "Sí" && monument.movilidadReducida) || (selectedAccessibility == "No" && !monument.movilidadReducida)
                 val matchesAudioGuide = selectedAudioGuide == null || (selectedAudioGuide == "Sí" && monument.audioURL.isNotEmpty()) || (selectedAudioGuide == "No" && monument.audioURL.isEmpty())
-                val distance = userLocation?.let { calculateDistance(it, GeoPoint(monument.latitud, monument.longitud)) }
                 val matchesRadius = if (selectedRadius > 0) {
                     val distance = userLocation?.let { calculateDistance(it, GeoPoint(monument.latitud, monument.longitud)) }
                     distance != null && distance <= selectedRadius
@@ -275,7 +330,6 @@ class MonumentListActivity : AppCompatActivity() {
         selectedAccessibility = null
         selectedAudioGuide = null
         selectedRadius = 0
-        selectedLocationType = "Ubicación Actual"
         selectedTransportType = null
 
         // Mostrar todos los monumentos sin filtros

@@ -22,7 +22,7 @@ class MonumentDetailActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private var monument: Monument? = null
     private var mediaPlayer: MediaPlayer? = null
-    private var isPlaying: Boolean = false // Variable mutable para controlar el estado de reproducción
+    private var isPlaying: Boolean = false
     private var map: GoogleMap? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
