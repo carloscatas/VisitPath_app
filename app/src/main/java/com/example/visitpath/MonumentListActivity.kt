@@ -10,8 +10,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.widget.CheckBox
 import android.widget.ImageButton
-import android.widget.RadioButton
-import android.widget.RadioGroup
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -28,6 +26,7 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.Autocomplete
 import com.google.android.libraries.places.widget.AutocompleteActivity
 import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
 import java.util.Locale
@@ -83,6 +82,13 @@ class MonumentListActivity : AppCompatActivity() {
         filterText.setOnClickListener { openFilterDialog() }
 
         requestLocationPermission()
+
+        val fabCreateRoute: FloatingActionButton = findViewById(R.id.fab_create_route)
+        fabCreateRoute.setOnClickListener {
+            // Abre la actividad para configurar la ruta personalizada
+            val intent = Intent(this, RouteConfigActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun openLocationSearch() {
@@ -158,21 +164,6 @@ class MonumentListActivity : AppCompatActivity() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
-
-        // Configuración del tipo de transporte
-        val transportRadioGroup = dialogLayout.findViewById<RadioGroup>(R.id.transportRadioGroup)
-        val radioPrivateTransport = dialogLayout.findViewById<RadioButton>(R.id.radio_private_transport)
-        val radioPublicTransport = dialogLayout.findViewById<RadioButton>(R.id.radio_public_transport)
-
-        // Restaurar selección anterior
-        selectedTransportType?.let {
-            if (it == "Privado") radioPrivateTransport.isChecked = true
-            if (it == "Público") radioPublicTransport.isChecked = true
-        }
-
-        transportRadioGroup.setOnCheckedChangeListener { _, checkedId ->
-            selectedTransportType = if (checkedId == R.id.radio_private_transport) "Privado" else "Público"
-        }
 
         // Configuración de categorías
         val categoryCheckboxes = listOf(

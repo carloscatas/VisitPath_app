@@ -25,7 +25,6 @@
 
         <!-- Declaración de la actividad MonumentDetailActivity -->
         <activity android:name=".MonumentDetailActivity" />
-
         <activity
             android:name=".MonumentListActivity"
             android:exported="true"
@@ -36,6 +35,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".RouteConfigActivity" />
 
     </application>
 

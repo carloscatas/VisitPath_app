@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".RouteConfigActivity">
+
+    <!-- Etiqueta para el selector de tiempo disponible para la ruta -->
+    <TextView
+        android:id="@+id/timeLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tiempo disponible (horas)"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="16dp"
+        android:layout_marginStart="16dp"/>
+
+    <!-- Selector de tiempo disponible para la ruta -->
+    <SeekBar
+        android:id="@+id/timeSeekBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:max="15"
+        android:progress="1"
+        app:layout_constraintTop_toBottomOf="@id/timeLabel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginHorizontal="16dp"/>
+
+    <!-- TextView para mostrar las horas seleccionadas -->
+    <TextView
+        android:id="@+id/selectedTimeText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="1 hora"
+        app:layout_constraintTop_toBottomOf="@id/timeSeekBar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp"/>
+
+    <!-- Etiqueta para el tipo de visita -->
+    <TextView
+        android:id="@+id/visitTypeLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tipo de visita"
+        app:layout_constraintTop_toBottomOf="@id/timeSeekBar"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="24dp"
+        android:layout_marginStart="16dp"/>
+
+    <!-- Grupo de botones para seleccionar el tipo de visita: Interior o Exterior -->
+    <RadioGroup
+        android:id="@+id/visitTypeGroup"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/visitTypeLabel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginHorizontal="16dp"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="8dp">
+
+        <RadioButton
+            android:id="@+id/radioQuickTour"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tour rápido" />
+
+            <ImageView
+                android:id="@+id/infoQuickTour"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/ic_info"
+                android:contentDescription="Información Tour Rápido" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+        <RadioButton
+            android:id="@+id/radioFullTour"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tour completo" />
+        <ImageView
+            android:id="@+id/infoFullTour"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/ic_info"
+            android:contentDescription="Información Tour Completo" />
+        </LinearLayout>
+    </RadioGroup>
+
+    <!-- Etiqueta para el tipo de transporte -->
+    <TextView
+        android:id="@+id/transportTypeLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tipo de transporte"
+        app:layout_constraintTop_toBottomOf="@id/visitTypeGroup"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="16dp"
+        android:layout_marginStart="16dp"/>
+
+    <!-- Grupo de botones para seleccionar el tipo de transporte: Público, Privado o Caminando -->
+    <RadioGroup
+        android:id="@+id/transportTypeGroup"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/transportTypeLabel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginHorizontal="16dp">
+
+        <RadioButton
+            android:id="@+id/radioPublicTransport"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Público" />
+
+        <RadioButton
+            android:id="@+id/radioPrivateTransport"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Privado" />
+
+        <RadioButton
+            android:id="@+id/radioWalking"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Caminando" />
+    </RadioGroup>
+
+    <!-- Botón para aplicar los ajustes y generar la ruta -->
+    <Button
+        android:id="@+id/applyRouteConfigButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Aplicar configuración de ruta"
+        app:layout_constraintTop_toBottomOf="@id/transportTypeGroup"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="24dp"/>
+</androidx.constraintlayout.widget.ConstraintLayout>
