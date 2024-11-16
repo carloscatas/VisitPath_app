@@ -103,7 +103,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-
+    <!-- Botón flotante para crear una ruta -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_create_route"
         android:layout_width="wrap_content"
@@ -114,4 +114,15 @@
         android:contentDescription="Crear ruta personalizada"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+    <!-- Botón flotante para abrir la lista de favoritos -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/openFavoritesButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:src="@drawable/ic_star"
+        android:contentDescription="Abrir favoritos"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

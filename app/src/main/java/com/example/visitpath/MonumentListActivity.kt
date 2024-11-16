@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Geocoder
+import android.net.Uri
 import android.os.Bundle
 import android.transition.Fade
 import android.util.Log
@@ -12,6 +13,8 @@ import android.widget.CheckBox
 import android.widget.ImageButton
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -22,10 +25,8 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.libraries.places.api.Places
-import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.widget.Autocomplete
 import com.google.android.libraries.places.widget.AutocompleteActivity
-import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
@@ -38,6 +39,7 @@ class MonumentListActivity : AppCompatActivity() {
     private val db = FirebaseFirestore.getInstance()
     private val LOCATION_PERMISSION_REQUEST_CODE = 1000
     private val AUTOCOMPLETE_REQUEST_CODE = 1
+    private val ROUTE_CONFIG_REQUEST_CODE = 2
     private lateinit var monumentList: MutableList<Monument> // Lista completa de monumentos
     private var filteredMonuments: MutableList<Monument> = mutableListOf() // Lista para los monumentos filtrados
     private var selectedRadius: Int = 0
@@ -51,6 +53,20 @@ class MonumentListActivity : AppCompatActivity() {
     private var selectedAccessibility: String? = null
     private var selectedAudioGuide: String? = null
     private lateinit var locationText: TextView
+    private val favoriteMonuments = mutableListOf<Monument>()
+
+    // Añadimos un ActivityResultLauncher para obtener los cambios desde FavoritesActivity
+    private val openFavoritesLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val updatedFavorites = result.data?.getParcelableArrayListExtra<Monument>("updatedFavorites")
+            updatedFavorites?.let {
+                // Actualizar la lista de favoritos con los datos más recientes
+                favoriteMonuments.clear()
+                favoriteMonuments.addAll(it)
+                monumentAdapter.notifyDataSetChanged() // Actualizamos el RecyclerView
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         window.enterTransition = Fade()
@@ -60,11 +76,50 @@ class MonumentListActivity : AppCompatActivity() {
         // Inicializar Google Places
         Places.initialize(applicationContext, "AIzaSyBRqF8SOEk36xfS8HWiFE5AJ2aIopQhTnE")
 
-
+        // Configuramos el RecyclerView y el adapter
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        monumentAdapter = MonumentAdapter(mutableListOf())
+        monumentAdapter = MonumentAdapter(mutableListOf()) { monument ->
+            if (monument.isFavorite) {
+                if (!favoriteMonuments.contains(monument)) {
+                    favoriteMonuments.add(monument)
+                }
+            } else {
+                favoriteMonuments.remove(monument)
+            }
+        }
         recyclerView.adapter = monumentAdapter
+
+        // Configurar el botón para abrir la pantalla de favoritos
+        val openFavoritesLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val updatedFavorites = result.data?.getParcelableArrayListExtra<Monument>("updatedFavorites")
+                updatedFavorites?.let {
+                    favoriteMonuments.clear()
+                    favoriteMonuments.addAll(it)
+
+                    // Actualizar la lista principal con el estado de favoritos sincronizado
+                    for (monument in monumentList) {
+                        monument.isFavorite = favoriteMonuments.contains(monument)
+                    }
+                    monumentAdapter.notifyDataSetChanged()
+                    monumentAdapter.updateFavorites(favoriteMonuments)
+                }
+            }
+        }
+
+        // Configurar el botón para abrir la pantalla de favoritos
+        val openFavoritesButton: FloatingActionButton = findViewById(R.id.openFavoritesButton)
+        openFavoritesButton.setOnClickListener {
+            // Construir la lista de favoritos dinámica antes de abrir la actividad
+            val currentFavorites = monumentList.filter { it.isFavorite } // Revisa qué monumentos tienen la estrella marcada
+            favoriteMonuments.clear()
+            favoriteMonuments.addAll(currentFavorites)
+
+            val intent = Intent(this, FavoritesActivity::class.java)
+            intent.putParcelableArrayListExtra("favorites", ArrayList(favoriteMonuments)) // Actualiza dinámicamente
+            openFavoritesLauncher.launch(intent)
+        }
 
         locationText = findViewById(R.id.locationText)
 
@@ -87,17 +142,11 @@ class MonumentListActivity : AppCompatActivity() {
         fabCreateRoute.setOnClickListener {
             // Abre la actividad para configurar la ruta personalizada
             val intent = Intent(this, RouteConfigActivity::class.java)
-            startActivity(intent)
+            startActivityForResult(intent, ROUTE_CONFIG_REQUEST_CODE)
         }
     }
 
-    private fun openLocationSearch() {
-        val fields = listOf(Place.Field.ID, Place.Field.NAME, Place.Field.LAT_LNG, Place.Field.ADDRESS)
-        val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.OVERLAY, fields).build(this)
-        startActivityForResult(intent, AUTOCOMPLETE_REQUEST_CODE)
-    }
-
-    private fun getLocationAndUpdateTextView() {
+       private fun getLocationAndUpdateTextView() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             val fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
             fusedLocationProviderClient.lastLocation.addOnSuccessListener { location ->
@@ -120,6 +169,8 @@ class MonumentListActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+
+        // Manejo del AUTOCOMPLETE_REQUEST_CODE (no se modifica)
         if (requestCode == AUTOCOMPLETE_REQUEST_CODE) {
             when (resultCode) {
                 RESULT_OK -> {
@@ -137,7 +188,34 @@ class MonumentListActivity : AppCompatActivity() {
                 }
             }
         }
+
+        // Manejo del ROUTE_CONFIG_REQUEST_CODE
+        if (requestCode == ROUTE_CONFIG_REQUEST_CODE && resultCode == RESULT_OK) {
+            val selectedTime = data?.getIntExtra("selectedTime", 1) ?: 1 // Tiempo disponible
+            val visitType = data?.getStringExtra("visitType") ?: "Tour rápido" // Tipo de tour
+            val transportType = data?.getStringExtra("transportType") ?: "Caminando" // Transporte
+
+            // Calcula el tiempo total necesario para la ruta seleccionada
+            val totalTime = calculateRouteTimes(filteredMonuments, visitType, transportType)
+
+            if (totalTime <= selectedTime) {
+                // Si el tiempo total es menor o igual al tiempo disponible, abre Google Maps
+                openSingleDayRouteInGoogleMaps(filteredMonuments)
+            } else {
+                // Si el tiempo total excede el tiempo disponible, ofrece optimizar la ruta
+                AlertDialog.Builder(this)
+                    .setTitle("Ruta demasiado larga")
+                    .setMessage("No es posible visitar todos los lugares en el tiempo seleccionado. ¿Quieres optimizar la ruta automáticamente?")
+                    .setPositiveButton("Sí") { _, _ ->
+                        optimizeRoute(selectedTime, visitType, transportType)
+                    }
+                    .setNegativeButton("No", null)
+                    .show()
+            }
+        }
     }
+
+
 
 
     private fun showFilterDialog() {
@@ -270,8 +348,9 @@ class MonumentListActivity : AppCompatActivity() {
         filterDialog.show()
     }
 
+    private val prioritizedMonuments: MutableList<Monument> = mutableListOf() // Lista de puntos prioritarios
     private fun applyFilters() {
-        // Verificar si ningún filtro está seleccionado (categorías, duración, entrada, etc.)
+        // Verificar si ningún filtro está seleccionado
         val noFiltersSelected = selectedCategories.isEmpty() &&
                 selectedDurations.isEmpty() &&
                 selectedEntry == null &&
@@ -279,15 +358,24 @@ class MonumentListActivity : AppCompatActivity() {
                 selectedAudioGuide == null &&
                 selectedRadius == 0
 
-        // Si no hay filtros seleccionados, mostramos todos los monumentos ordenados por cercanía
-        filteredMonuments = if (noFiltersSelected) {
-            monumentList.sortedBy { monument ->
-                userLocation?.let { calculateDistance(it, GeoPoint(monument.latitud, monument.longitud)) } ?: 0.0
-            }.toMutableList()
+        // Dividir los monumentos en favoritos y no favoritos
+        val prioritized = mutableListOf<Monument>()
+        val nonPrioritized = mutableListOf<Monument>()
+
+        for (monument in monumentList) {
+            if (favoriteMonuments.contains(monument)) {
+                prioritized.add(monument) // Siempre prioriza favoritos
+            } else {
+                nonPrioritized.add(monument)
+            }
+        }
+
+        // Aplicar filtros solo a los no favoritos
+        val filteredNonPrioritized = if (noFiltersSelected) {
+            nonPrioritized
         } else {
-            // Aquí aplicaríamos la lógica de filtros si hay filtros seleccionados
-            monumentList.filter { monument ->
-                // Mantener la lógica de cada filtro aquí
+            nonPrioritized.filter { monument ->
+                // Lógica de filtros
                 val matchesCategory = selectedCategories.isEmpty() || selectedCategories.contains(monument.categoria)
                 val matchesDuration = selectedDurations.isEmpty() ||
                         (selectedDurations.contains("Menos de 1h") && monument.duracionVisita < 1) ||
@@ -303,13 +391,20 @@ class MonumentListActivity : AppCompatActivity() {
                 } else {
                     true // Ignora el filtro de radio si selectedRadius es 0
                 }
-                // Combinar todos los filtros
                 matchesCategory && matchesDuration && matchesEntry && matchesAccessibility && matchesAudioGuide && matchesRadius
             }.toMutableList()
         }
 
-        // Calcula los tiempos de la ruta en función de los monumentos filtrados y el transporte seleccionado
-        calculateRouteTimes()
+        // Ordenar por cercanía
+        val sortedPrioritized = prioritized.sortedBy {
+            calculateDistance(userLocation!!, GeoPoint(it.latitud, it.longitud))
+        }
+        val sortedNonPrioritized = filteredNonPrioritized.sortedBy {
+            calculateDistance(userLocation!!, GeoPoint(it.latitud, it.longitud))
+        }
+
+        // Combinar ambas listas y actualizar el adaptador
+        filteredMonuments = (sortedPrioritized + sortedNonPrioritized).toMutableList()
         monumentAdapter.updateData(filteredMonuments)
     }
 
@@ -414,29 +509,39 @@ class MonumentListActivity : AppCompatActivity() {
         }
     }
 
-    private fun calculateRouteTimes() {
-        var totalTime = 0.0
-
-        for (i in 0 until filteredMonuments.size - 1) {
-            val startMonument = filteredMonuments[i]
-            val endMonument = filteredMonuments[i + 1]
-
-            // Calcula la distancia entre dos monumentos
-            val distance = calculateDistance(
-                GeoPoint(startMonument.latitud, startMonument.longitud),
-                GeoPoint(endMonument.latitud, endMonument.longitud)
-            )
-
-            // Calcula el tiempo de desplazamiento basado en el tipo de transporte
-            val travelTime = calculateTravelTime(distance)
-            totalTime += travelTime
-
+    private fun calculateRouteTimes(points: List<Monument>, visitType: String, transportType: String): Double {
+        val visitDurationQuick = 0.5 // 30 minutos para tour rápido
+        val averageSpeed = when (transportType) {
+            "A pie" -> 5.0 // Velocidad en km/h
+            "Público" -> 20.0
+            "Privado" -> 60.0
+            else -> 5.0
         }
 
-        // Muestra o utiliza el tiempo total estimado para la ruta
-        Log.d("Route", "Tiempo total estimado para la ruta: $totalTime horas")
-    }
+        var totalTime = 0.0
 
+        for (i in points.indices) {
+            // Añadir tiempo de visita
+            val monumentVisitDuration = if (visitType == "Tour rápido") visitDurationQuick else points[i].duracionVisita
+            totalTime += monumentVisitDuration
+
+            // Añadir tiempo de desplazamiento (excepto el último punto)
+            if (i < points.size - 1) {
+                val start = points[i]
+                val end = points[i + 1]
+                val distance = calculateDistance(
+                    GeoPoint(start.latitud, start.longitud),
+                    GeoPoint(end.latitud, end.longitud)
+                )
+                totalTime += distance / averageSpeed
+            }
+        }
+
+        // Añadir margen de error para descansos y comidas
+        totalTime += 2.0 // 2 horas de margen
+
+        return totalTime
+    }
 
     private fun fetchMonumentsFromFirestore(userLocation: GeoPoint) {
         db.collection("monumentos").addSnapshotListener { snapshot, e ->
@@ -467,4 +572,66 @@ class MonumentListActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun openSingleDayRouteInGoogleMaps(points: List<Monument>) {
+        // Verifica si hay suficientes puntos de interés para la ruta
+        if (points.isEmpty()) {
+            Toast.makeText(this, "No hay puntos de interés para mostrar en la ruta.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Construye la URI para Google Maps con los puntos de interés como waypoints
+        val origin = "${userLocation?.latitude},${userLocation?.longitude}"
+        val destination = "${points.last().latitud},${points.last().longitud}"
+
+        // Crea la lista de waypoints (hasta 10 puntos debido a la limitación de Google Maps)
+        val waypoints = points.take(9).joinToString("|") { "${it.latitud},${it.longitud}" }
+
+        val gmmIntentUri = Uri.parse(
+            "https://www.google.com/maps/dir/?api=1" +
+                    "&origin=$origin" +
+                    "&destination=$destination" +
+                    "&waypoints=$waypoints" +
+                    "&travelmode=walking"
+        )
+
+        // Inicia la intención para abrir Google Maps
+        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+        mapIntent.setPackage("com.google.android.apps.maps")
+        if (mapIntent.resolveActivity(packageManager) != null) {
+            startActivity(mapIntent)
+        } else {
+            Toast.makeText(this, "Google Maps no está disponible en este dispositivo.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun optimizeRoute(selectedTime: Int, visitType: String, transportType: String) {
+        var timeAvailable = selectedTime.toDouble()
+        val optimizedMonuments = mutableListOf<Monument>()
+
+        // Incluye primero los prioritarios
+        for (monument in prioritizedMonuments) {
+            val timeNeeded = calculateRouteTimes(listOf(monument), visitType, transportType)
+            if (timeAvailable - timeNeeded >= 0) {
+                optimizedMonuments.add(monument)
+                timeAvailable -= timeNeeded
+            }
+        }
+
+        // Incluye los demás puntos hasta llenar el tiempo disponible
+        for (monument in filteredMonuments) {
+            if (!prioritizedMonuments.contains(monument)) {
+                val timeNeeded = calculateRouteTimes(listOf(monument), visitType, transportType)
+                if (timeAvailable - timeNeeded >= 0) {
+                    optimizedMonuments.add(monument)
+                    timeAvailable -= timeNeeded
+                }
+            }
+        }
+
+        // Actualiza la lista filtrada y muestra la ruta optimizada
+        filteredMonuments = optimizedMonuments
+        openSingleDayRouteInGoogleMaps(filteredMonuments)
+    }
+
 }

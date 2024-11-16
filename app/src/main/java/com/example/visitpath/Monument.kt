@@ -14,7 +14,9 @@ data class Monument(
     val costoEntrada: Boolean = false,
     val movilidadReducida: Boolean = false,
     val imagenURL: String = "",
-    val audioURL: String = ""
+    val audioURL: String = "",
+    var isFavorite: Boolean = false // Campo para indicar si es favorito
+
 ) : Parcelable {
     // Constructor vacío requerido por Firestore
     constructor() : this("", "", 0.0, 0.0, "", 0.0, false, false, "", "")

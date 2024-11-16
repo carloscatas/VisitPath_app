@@ -12,6 +12,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
+        <!-- Icono de la estrella para marcar como prioritario -->
+        <ImageView
+            android:id="@+id/starIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_margin="8dp"
+            android:contentDescription="Favorito"
+            app:srcCompat="@drawable/ic_star" />
+
+
         <!-- ImageView para la imagen de fondo -->
         <ImageView
             android:id="@+id/monumentImage"

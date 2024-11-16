@@ -1,5 +1,6 @@
 package com.example.visitpath
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.ImageView
@@ -65,7 +66,11 @@ class RouteConfigActivity : AppCompatActivity() {
         }
 
         applyRouteConfigButton.setOnClickListener {
-            // Aquí deberíamos guardar los valores seleccionados y calcular la ruta
+            val resultIntent = Intent()
+            resultIntent.putExtra("selectedTime", selectedTime) // Pasar horas o días
+            resultIntent.putExtra("visitType", visitType) // Tour rápido o completo
+            resultIntent.putExtra("transportType", transportType) // Transporte
+            setResult(RESULT_OK, resultIntent)
             finish()
         }
     }
