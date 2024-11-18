@@ -3,7 +3,7 @@ package com.example.visitpath
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
-import android.widget.ImageView
+import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.SeekBar
 import android.widget.TextView
@@ -13,7 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 class RouteConfigActivity : AppCompatActivity() {
 
     private var selectedTime: Int = 1 // Tiempo en horas (inicializa en 1)
-    private var visitType: String = "Exterior"
+    private var visitType: String = "Tour completo"
     private var transportType: String = "Caminando"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,30 +42,41 @@ class RouteConfigActivity : AppCompatActivity() {
         })
 
         visitTypeGroup.setOnCheckedChangeListener { _, checkedId ->
-            visitType = if (checkedId == R.id.radioQuickTour) "Tour rápido" else "Tour completo"
+            visitType = when (checkedId) {
+                R.id.radioQuickTour -> "Tour rápido"
+                R.id.radioFullTour -> "Tour completo"
+                else -> "" // Valor por defecto
+            }
         }
 
-        val infoQuickTour: ImageView = findViewById(R.id.infoQuickTour)
-        val infoFullTour: ImageView = findViewById(R.id.infoFullTour)
+        // Configurar los clics para mostrar la información de cada tour
+        val radioQuickTour: RadioButton = findViewById(R.id.radioQuickTour)
+        val radioFullTour: RadioButton = findViewById(R.id.radioFullTour)
 
-        infoQuickTour.setOnClickListener {
+        radioQuickTour.setOnClickListener {
             Toast.makeText(this, "Visita exterior de los puntos de interés", Toast.LENGTH_SHORT).show()
         }
 
-        infoFullTour.setOnClickListener {
+        radioFullTour.setOnClickListener {
             Toast.makeText(this, "Visita completa, con entrada a los puntos de interés", Toast.LENGTH_SHORT).show()
         }
 
-
+        // Configurar RadioGroup para el tipo de transporte
         transportTypeGroup.setOnCheckedChangeListener { _, checkedId ->
             transportType = when (checkedId) {
                 R.id.radioPublicTransport -> "Público"
                 R.id.radioPrivateTransport -> "Privado"
-                else -> "A pie"
+                else -> "Caminando"
             }
         }
 
         applyRouteConfigButton.setOnClickListener {
+            // Validar el tipo de visita seleccionado
+            if (visitType.isBlank()) {
+                Toast.makeText(this, "Por favor, selecciona un tipo de tour.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
             val resultIntent = Intent()
             resultIntent.putExtra("selectedTime", selectedTime) // Pasar horas o días
             resultIntent.putExtra("visitType", visitType) // Tour rápido o completo

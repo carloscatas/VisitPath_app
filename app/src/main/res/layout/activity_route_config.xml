@@ -52,7 +52,7 @@
         android:layout_marginTop="24dp"
         android:layout_marginStart="16dp"/>
 
-    <!-- Grupo de botones para seleccionar el tipo de visita: Interior o Exterior -->
+    <!-- Grupo de botones para seleccionar el tipo de visita: Tour rápido o Tour completo -->
     <RadioGroup
         android:id="@+id/visitTypeGroup"
         android:layout_width="0dp"
@@ -63,45 +63,22 @@
         android:layout_marginHorizontal="16dp"
         android:orientation="vertical">
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="8dp">
-
         <RadioButton
             android:id="@+id/radioQuickTour"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Tour rápido" />
-
-            <ImageView
-                android:id="@+id/infoQuickTour"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_marginStart="8dp"
-                android:src="@drawable/ic_info"
-                android:contentDescription="Información Tour Rápido" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:text="Tour rápido"
+            android:drawableEnd="@drawable/ic_info"
+            android:drawablePadding="8dp"
+            android:layout_marginBottom="8dp" />
 
         <RadioButton
             android:id="@+id/radioFullTour"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Tour completo" />
-        <ImageView
-            android:id="@+id/infoFullTour"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_marginStart="8dp"
-            android:src="@drawable/ic_info"
-            android:contentDescription="Información Tour Completo" />
-        </LinearLayout>
+            android:text="Tour completo"
+            android:drawableEnd="@drawable/ic_info"
+            android:drawablePadding="8dp" />
     </RadioGroup>
 
     <!-- Etiqueta para el tipo de transporte -->
