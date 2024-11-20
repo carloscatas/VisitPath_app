@@ -165,45 +165,52 @@ class MonumentListActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        // Manejo del ROUTE_CONFIG_REQUEST_CODE
         if (requestCode == ROUTE_CONFIG_REQUEST_CODE && resultCode == RESULT_OK) {
-            availableTime = data?.getIntExtra("selectedTime", 1) ?: 1
-            tourType = data?.getStringExtra("visitType") ?: "Tour completo"
-            transportType = data?.getStringExtra("transportType") ?: "Caminando"
+            val selectedTime = data?.getIntExtra("selectedTime", 1) ?: 1
+            val visitType = data?.getStringExtra("visitType") ?: "Tour completo"
+            val transportType = data?.getStringExtra("transportType") ?: "Caminando"
 
-            if (tourType != "Tour rápido" && tourType != "Tour completo") {
-                Toast.makeText(this, "Error en el tipo de tour seleccionado.", Toast.LENGTH_SHORT).show()
+            if (userLocation == null) {
+                Toast.makeText(this, "No se pudo obtener la ubicación del usuario.", Toast.LENGTH_SHORT).show()
                 return
             }
 
             val routePlanner = RoutePlanner()
+            val (viableRoute, remainingMonuments, currentTime) = routePlanner.handleRouteGeneration(
+                allMonuments = filteredMonuments,
+                favoriteMonuments = favoriteMonuments,
+                userLocation = userLocation!!,
+                selectedTime = selectedTime,
+                visitType = visitType,
+                transportType = transportType
+            )
 
-            if (availableTime > 10) {
-                // Preparar rutas por días
-                prepareMultiDayRoutes(availableTime - 10)
-            } else {
-                val monumentsForRoute = if (favoriteMonuments.isNotEmpty()) {
-                    favoriteMonuments // Si hay favoritos, se usan
-                } else {
-                    filteredMonuments // Si no hay favoritos, se usan los filtrados
-                }
+            if (viableRoute.isEmpty()) {
+                Toast.makeText(this, "No es posible generar una ruta con el tiempo seleccionado.", Toast.LENGTH_LONG).show()
+                return
+            }
 
-                val generatedRoutes = routePlanner.generateRoute(
-                    allMonuments = monumentsForRoute,
-                    favoriteMonuments = favoriteMonuments,
-                    selectedTime = availableTime,
-                    visitType = tourType,
+            // Verificar si queda tiempo adicional
+            if ((currentTime + 1) <= selectedTime.toDouble() && remainingMonuments.isNotEmpty()) {
+                routePlanner.checkForExtraTimeAndShowDialog(
+                    context = this,
+                    currentTime = currentTime,
+                    availableTime = selectedTime.toDouble(),
+                    route = viableRoute,
+                    remainingMonuments = remainingMonuments,
+                    visitType = visitType,
                     transportType = transportType,
-                    userLocation = userLocation!!
+                    currentLocation = GeoPoint(viableRoute.last().latitud, viableRoute.last().longitud)
                 )
-                if (generatedRoutes.isEmpty()) {
-                    Toast.makeText(this, "No se pudo generar una ruta con los parámetros seleccionados.", Toast.LENGTH_SHORT).show()
-                } else {
-                    routePlanner.openRouteInGoogleMaps(this, userLocation!!, generatedRoutes[0], transportType)
-                }
+            } else {
+                routePlanner.openRouteInGoogleMaps(this, userLocation!!, viableRoute, transportType)
             }
         }
     }
+
+
+
+
 
     private fun prepareMultiDayRoutes(days: Int) {
         val routePlanner = RoutePlanner()
@@ -223,10 +230,45 @@ class MonumentListActivity : AppCompatActivity() {
         )
 
         if (generatedRoutes.isEmpty()) {
-            Toast.makeText(this, "No se pudo generar rutas para los días seleccionados.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "No se pudo generar rutas para los días seleccionados.",
+                Toast.LENGTH_SHORT
+            ).show()
         } else {
             // Crear botones dinámicos para cada día
-            displayDailyRoutes(generatedRoutes)
+            val dailyRoutes = mutableListOf<List<Monument>>()
+            var currentDay = 0
+            var currentTime = 0.0
+
+            while (currentDay < days && currentDay < generatedRoutes.size) {
+                dailyRoutes.add(generatedRoutes[currentDay])
+                currentDay++
+            }
+
+            displayDailyRoutes(dailyRoutes)
+
+            // Mostrar diálogo para optimizar ruta si queda tiempo
+            if (currentDay < generatedRoutes.size) {
+                val generatedRoute = generatedRoutes[currentDay]
+                for (i in 0 until generatedRoute.size - 1) {
+                    val monument = generatedRoute[i]
+                    val nextMonument = generatedRoute[i + 1]
+
+                    val travelTime = routePlanner.calculateTravelTime(
+                        routePlanner.getDistanceBetweenPoints(
+                            GeoPoint(monument.latitud, monument.longitud),
+                            GeoPoint(nextMonument.latitud, nextMonument.longitud)
+                        ),
+                        transportType
+                    )
+
+                    val visitTime = if (tourType == "Tour rápido") 0.5 else monument.duracionVisita
+                    currentTime += travelTime + visitTime
+                }
+
+
+            }
         }
     }
 
@@ -384,24 +426,12 @@ class MonumentListActivity : AppCompatActivity() {
                 selectedAudioGuide == null &&
                 selectedRadius == 0
 
-        // Dividir los monumentos en favoritos y no favoritos
-        val prioritized = mutableListOf<Monument>()
-        val nonPrioritized = mutableListOf<Monument>()
-
-        for (monument in monumentList) {
-            if (favoriteMonuments.contains(monument)) {
-                prioritized.add(monument) // Siempre prioriza favoritos
-            } else {
-                nonPrioritized.add(monument)
-            }
-        }
-
-        // Aplicar filtros solo a los no favoritos
-        val filteredNonPrioritized = if (noFiltersSelected) {
-            nonPrioritized
+        // Aplicar filtros a todos los monumentos, incluidos los favoritos
+        val filteredMonuments = if (noFiltersSelected) {
+            monumentList
         } else {
-            nonPrioritized.filter { monument ->
-                // Lógica de filtros
+            monumentList.filter { monument ->
+                // Lógica de filtros (categorías, duración, accesibilidad, etc.)
                 val matchesCategory = selectedCategories.isEmpty() || selectedCategories.contains(monument.categoria)
                 val matchesDuration = selectedDurations.isEmpty() ||
                         (selectedDurations.contains("Menos de 1h") && monument.duracionVisita < 1) ||
@@ -421,18 +451,16 @@ class MonumentListActivity : AppCompatActivity() {
             }.toMutableList()
         }
 
-        // Ordenar por cercanía
-        val sortedPrioritized = prioritized.sortedBy {
-            calculateDistance(userLocation!!, GeoPoint(it.latitud, it.longitud))
-        }
-        val sortedNonPrioritized = filteredNonPrioritized.sortedBy {
+        // Ordenar los monumentos filtrados por cercanía al usuario
+        val sortedMonuments = filteredMonuments.sortedBy {
             calculateDistance(userLocation!!, GeoPoint(it.latitud, it.longitud))
         }
 
-        // Combinar ambas listas y actualizar el adaptador
-        filteredMonuments = (sortedPrioritized + sortedNonPrioritized).toMutableList()
-        monumentAdapter.updateData(filteredMonuments)
+        // Actualizar el adaptador con los monumentos filtrados y ordenados
+        this.filteredMonuments = sortedMonuments.toMutableList()
+        monumentAdapter.updateData(this.filteredMonuments)
     }
+
 
     private fun resetFilters() {
         // Restablecer todas las opciones de filtro

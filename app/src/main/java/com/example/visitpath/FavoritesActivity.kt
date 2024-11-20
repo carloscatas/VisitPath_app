@@ -15,6 +15,7 @@ class FavoritesActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var favoritesAdapter: FavoritesAdapter
     private var favoriteMonuments: MutableList<Monument> = mutableListOf()
+    private var filteredMonuments: MutableList<Monument> = mutableListOf() // Almacena la lista completa de monumentos filtrados
     private var userLocation: GeoPoint? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,13 +35,15 @@ class FavoritesActivity : AppCompatActivity() {
         // Recibir los favoritos desde la actividad principal
         favoriteMonuments = intent.getParcelableArrayListExtra<Monument>("favorites") ?: mutableListOf()
 
+        // Recibir la lista completa de monumentos desde la actividad principal
+        filteredMonuments = intent.getParcelableArrayListExtra<Monument>("filteredMonuments") ?: mutableListOf()
+
         // Inicializa el RecyclerView
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
         // Configura el adaptador con la lista de favoritos
         favoritesAdapter = FavoritesAdapter(favoriteMonuments) { monumentToRemove ->
-
             // Eliminar de favoritos al pulsar la estrella
             favoriteMonuments.remove(monumentToRemove)
             favoritesAdapter.updateFavorites(favoriteMonuments)
@@ -82,6 +85,7 @@ class FavoritesActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+
         if (requestCode == RoutePlanner.ROUTE_CONFIG_REQUEST_CODE && resultCode == RESULT_OK) {
             val selectedTime = data?.getIntExtra("selectedTime", 1) ?: 1
             val visitType = data?.getStringExtra("visitType") ?: "Tour rápido"
@@ -91,14 +95,10 @@ class FavoritesActivity : AppCompatActivity() {
                 Toast.makeText(this, "No se pudo obtener la ubicación del usuario.", Toast.LENGTH_SHORT).show()
                 return
             }
-            // Ordenar los favoritos antes de pasar a la generación de rutas
-            val sortedFavoriteMonuments = favoriteMonuments.sortedBy {
-                RoutePlanner().getDistanceBetweenPoints(userLocation!!, GeoPoint(it.latitud, it.longitud))
-            }
 
             val routePlanner = RoutePlanner()
-            val routes = routePlanner.generateRoute(
-                allMonuments = sortedFavoriteMonuments, // Usamos la lista unificada
+            val (viableRoute, remainingMonuments, currentTime) = routePlanner.handleRouteGeneration(
+                allMonuments = filteredMonuments,
                 favoriteMonuments = favoriteMonuments,
                 userLocation = userLocation!!,
                 selectedTime = selectedTime,
@@ -106,14 +106,28 @@ class FavoritesActivity : AppCompatActivity() {
                 transportType = transportType
             )
 
-            if (routes.isNotEmpty()) {
-                // Usar solo el primer itinerario generado, que contiene los puntos viables
-                val viableRoute = routes.first()
-                routePlanner.openRouteInGoogleMaps(this, userLocation!!, viableRoute, transportType)
-            } else {
+            if (viableRoute.isEmpty()) {
                 Toast.makeText(this, "No es posible generar una ruta con el tiempo seleccionado.", Toast.LENGTH_LONG).show()
+                return
+            }
+
+            // Verificar tiempo extra
+            if ((currentTime + 1) <= selectedTime.toDouble() && remainingMonuments.isNotEmpty()) {
+                routePlanner.checkForExtraTimeAndShowDialog(
+                    context = this,
+                    currentTime = currentTime,
+                    availableTime = selectedTime.toDouble(),
+                    route = viableRoute,
+                    remainingMonuments = remainingMonuments,
+                    visitType = visitType,
+                    transportType = transportType,
+                    currentLocation = GeoPoint(viableRoute.last().latitud, viableRoute.last().longitud)
+                )
+            } else {
+                routePlanner.openRouteInGoogleMaps(this, userLocation!!, viableRoute, transportType)
             }
         }
     }
+
 
 }
