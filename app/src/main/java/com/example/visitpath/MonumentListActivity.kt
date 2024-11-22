@@ -107,6 +107,7 @@ class MonumentListActivity : AppCompatActivity() {
             val intent = Intent(this, FavoritesActivity::class.java)
             intent.putParcelableArrayListExtra("favorites", ArrayList(favoriteMonuments))
             intent.putParcelableArrayListExtra("filteredMonuments", ArrayList(filteredMonuments)) // Pasar filtrados también
+            intent.putParcelableArrayListExtra("allMonuments", ArrayList(monumentList))
 
             // Pasar la ubicación del usuario
             userLocation?.let {
@@ -182,7 +183,8 @@ class MonumentListActivity : AppCompatActivity() {
                 userLocation = userLocation!!,
                 selectedTime = selectedTime,
                 visitType = visitType,
-                transportType = transportType
+                transportType = transportType,
+                filteredMonuments = filteredMonuments.toMutableList()
             )
 
             if (viableRoute.isEmpty()) {
@@ -190,21 +192,51 @@ class MonumentListActivity : AppCompatActivity() {
                 return
             }
 
-            // Verificar si queda tiempo adicional
-            if ((currentTime + 1) <= selectedTime.toDouble() && remainingMonuments.isNotEmpty()) {
+            // Calcular el tiempo requerido solo con los favoritos
+            var tempCurrentTime = 0.0
+            if (favoriteMonuments.isNotEmpty()) {
+                var tempLocation = userLocation
+                favoriteMonuments.forEach { favorite ->
+                    val travelTime = routePlanner.calculateTravelTime(
+                        routePlanner.getDistanceBetweenPoints(tempLocation!!, GeoPoint(favorite.latitud, favorite.longitud)),
+                        transportType
+                    )
+                    val visitTime = if (visitType == "Tour rápido") 0.5 else favorite.duracionVisita
+                    tempCurrentTime += travelTime + visitTime
+                    tempLocation = GeoPoint(favorite.latitud, favorite.longitud)
+                }
+            }
+
+// Mostrar el cuadro de diálogo si hay tiempo extra después de visitar los favoritos
+            if ((tempCurrentTime + 1) <= selectedTime.toDouble() && filteredMonuments.isNotEmpty()) {
+                Log.d("DialogCheck", "Mostrando cuadro de diálogo. Tiempo con favoritos: $tempCurrentTime, Tiempo disponible: $selectedTime")
                 routePlanner.checkForExtraTimeAndShowDialog(
                     context = this,
-                    currentTime = currentTime,
+                    currentTime = tempCurrentTime,
                     availableTime = selectedTime.toDouble(),
-                    route = viableRoute,
-                    remainingMonuments = remainingMonuments,
+                    route = favoriteMonuments.toMutableList(),
+                    remainingMonuments = monumentList.filterNot { favoriteMonuments.contains(it) }.toMutableList(),
                     visitType = visitType,
                     transportType = transportType,
-                    currentLocation = GeoPoint(viableRoute.last().latitud, viableRoute.last().longitud)
+                    currentLocation = userLocation!!,
+                    filteredMonuments = filteredMonuments
                 )
             } else {
-                routePlanner.openRouteInGoogleMaps(this, userLocation!!, viableRoute, transportType)
+                // Continuar con la generación completa de la ruta
+                val routes = routePlanner.generateRoute(
+                    allMonuments = filteredMonuments,
+                    favoriteMonuments = favoriteMonuments,
+                    selectedTime = selectedTime,
+                    visitType = visitType,
+                    transportType = transportType,
+                    userLocation = userLocation!!,
+                    filteredMonuments = filteredMonuments.toMutableList()
+                )
+                if (routes.isNotEmpty()) {
+                    routePlanner.openRouteInGoogleMaps(this, userLocation!!, routes.first(), transportType)
+                }
             }
+
         }
     }
 
@@ -226,7 +258,8 @@ class MonumentListActivity : AppCompatActivity() {
             selectedTime = days * 24, // Tiempo total en horas
             visitType = tourType,
             transportType = transportType,
-            userLocation = userLocation!!
+            userLocation = userLocation!!,
+            filteredMonuments = filteredMonuments.toMutableList()
         )
 
         if (generatedRoutes.isEmpty()) {

@@ -2,6 +2,7 @@ package com.example.visitpath
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -9,6 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.firestore.GeoPoint
+
 
 class FavoritesActivity : AppCompatActivity() {
 
@@ -103,7 +105,8 @@ class FavoritesActivity : AppCompatActivity() {
                 userLocation = userLocation!!,
                 selectedTime = selectedTime,
                 visitType = visitType,
-                transportType = transportType
+                transportType = transportType,
+                filteredMonuments = filteredMonuments.toMutableList()
             )
 
             if (viableRoute.isEmpty()) {
@@ -111,21 +114,55 @@ class FavoritesActivity : AppCompatActivity() {
                 return
             }
 
-            // Verificar tiempo extra
-            if ((currentTime + 1) <= selectedTime.toDouble() && remainingMonuments.isNotEmpty()) {
+            // Calcular el tiempo requerido solo con los favoritos
+            var tempCurrentTime = 0.0
+            if (favoriteMonuments.isNotEmpty()) {
+                var tempLocation = userLocation
+                favoriteMonuments.forEach { favorite ->
+                    val travelTime = routePlanner.calculateTravelTime(
+                        routePlanner.getDistanceBetweenPoints(tempLocation!!, GeoPoint(favorite.latitud, favorite.longitud)),
+                        transportType
+                    )
+                    val visitTime = if (visitType == "Tour rápido") 0.5 else favorite.duracionVisita
+                    tempCurrentTime += travelTime + visitTime
+                    tempLocation = GeoPoint(favorite.latitud, favorite.longitud)
+                }
+            }
+
+        // Mostrar el cuadro de diálogo si hay tiempo extra después de visitar los favoritos
+            if ((tempCurrentTime + 1) <= selectedTime.toDouble() && filteredMonuments.isNotEmpty()) {
+                Log.d("DialogCheck", "Mostrando cuadro de diálogo. Tiempo con favoritos: $tempCurrentTime, Tiempo disponible: $selectedTime")
+
+                val allMonuments = intent.getParcelableArrayListExtra<Monument>("allMonuments") ?: mutableListOf()
+                val remainingMonuments = allMonuments.filterNot { favoriteMonuments.contains(it) }.toMutableList()
+
                 routePlanner.checkForExtraTimeAndShowDialog(
                     context = this,
-                    currentTime = currentTime,
+                    currentTime = tempCurrentTime,
                     availableTime = selectedTime.toDouble(),
-                    route = viableRoute,
+                    route = favoriteMonuments.toMutableList(),
                     remainingMonuments = remainingMonuments,
                     visitType = visitType,
                     transportType = transportType,
-                    currentLocation = GeoPoint(viableRoute.last().latitud, viableRoute.last().longitud)
+                    currentLocation = userLocation!!,
+                    filteredMonuments = filteredMonuments.toMutableList()
                 )
             } else {
-                routePlanner.openRouteInGoogleMaps(this, userLocation!!, viableRoute, transportType)
+                // Continuar con la generación completa de la ruta
+                val routes = routePlanner.generateRoute(
+                    allMonuments = filteredMonuments,
+                    favoriteMonuments = favoriteMonuments,
+                    selectedTime = selectedTime,
+                    visitType = visitType,
+                    transportType = transportType,
+                    userLocation = userLocation!!,
+                    filteredMonuments = filteredMonuments.toMutableList()
+                )
+                if (routes.isNotEmpty()) {
+                    routePlanner.openRouteInGoogleMaps(this, userLocation!!, routes.first(), transportType)
+                }
             }
+
         }
     }
 
