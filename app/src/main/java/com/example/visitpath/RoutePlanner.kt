@@ -56,6 +56,11 @@ class RoutePlanner {
         userLocation: GeoPoint,
         filteredMonuments: MutableList<Monument>
     ): List<List<Monument>> {
+        val hoursPerDay = 10 // Tiempo máximo disponible por día
+        val dailyRoutes = mutableListOf<List<Monument>>()
+        val remainingFavorites = favoriteMonuments.toMutableList()
+        val remainingFiltered = filteredMonuments.toMutableList()
+        val remainingMonuments = allMonuments.toMutableList()
         val visitDurationQuick = 0.5 // 30 minutos por visita para tour rápido
         val availableTime = if (selectedTime <= 10) {
             selectedTime.toDouble()
@@ -64,7 +69,6 @@ class RoutePlanner {
         }
 
         // Crear listas para priorización
-        val remainingMonuments = allMonuments.filterNot { favoriteMonuments.contains(it) }.toMutableList()
         val filteredNonFavoriteMonuments = filteredMonuments.filterNot { favoriteMonuments.contains(it) }.toMutableList()
         val unfilteredMonuments = remainingMonuments.filterNot { filteredMonuments.contains(it) }.toMutableList()
 

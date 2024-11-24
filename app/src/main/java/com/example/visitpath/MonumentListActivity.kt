@@ -29,6 +29,7 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
+import java.io.Serializable
 import java.util.Locale
 
 class MonumentListActivity : AppCompatActivity() {
@@ -176,73 +177,123 @@ class MonumentListActivity : AppCompatActivity() {
                 return
             }
 
-            val routePlanner = RoutePlanner()
-            val (viableRoute, remainingMonuments, currentTime) = routePlanner.handleRouteGeneration(
-                allMonuments = filteredMonuments,
-                favoriteMonuments = favoriteMonuments,
-                userLocation = userLocation!!,
-                selectedTime = selectedTime,
-                visitType = visitType,
-                transportType = transportType,
-                filteredMonuments = filteredMonuments.toMutableList()
-            )
 
-            if (viableRoute.isEmpty()) {
-                Toast.makeText(this, "No es posible generar una ruta con el tiempo seleccionado.", Toast.LENGTH_LONG).show()
-                return
-            }
+            if (selectedTime > 11) { // Más de 1 día seleccionado
+                val totalDays = selectedTime - 10
+                val itineraryManager = ItineraryManager()
 
-            // Calcular el tiempo requerido solo con los favoritos
-            var tempCurrentTime = 0.0
-            if (favoriteMonuments.isNotEmpty()) {
-                var tempLocation = userLocation
-                favoriteMonuments.forEach { favorite ->
-                    val travelTime = routePlanner.calculateTravelTime(
-                        routePlanner.getDistanceBetweenPoints(tempLocation!!, GeoPoint(favorite.latitud, favorite.longitud)),
-                        transportType
-                    )
-                    val visitTime = if (visitType == "Tour rápido") 0.5 else favorite.duracionVisita
-                    tempCurrentTime += travelTime + visitTime
-                    tempLocation = GeoPoint(favorite.latitud, favorite.longitud)
-                }
-            }
+                // Enviar listas al ItineraryManager con logs de depuración
+                val remainingMonuments = monumentList.filterNot {
+                    favoriteMonuments.contains(it) || filteredMonuments.contains(it)
+                }.toMutableList()
 
-// Mostrar el cuadro de diálogo si hay tiempo extra después de visitar los favoritos
-            if ((tempCurrentTime + 1) <= selectedTime.toDouble() && filteredMonuments.isNotEmpty()) {
-                Log.d("DialogCheck", "Mostrando cuadro de diálogo. Tiempo con favoritos: $tempCurrentTime, Tiempo disponible: $selectedTime")
-                routePlanner.checkForExtraTimeAndShowDialog(
-                    context = this,
-                    currentTime = tempCurrentTime,
-                    availableTime = selectedTime.toDouble(),
-                    route = favoriteMonuments.toMutableList(),
-                    remainingMonuments = monumentList.filterNot { favoriteMonuments.contains(it) }.toMutableList(),
+                Log.d("MonumentListActivity", "Monumentos totales: ${monumentList.size}")
+                Log.d("MonumentListActivity", "Favoritos: ${favoriteMonuments.size}")
+                Log.d("MonumentListActivity", "Filtrados: ${filteredMonuments.size}")
+                Log.d("MonumentListActivity", "Restantes: ${remainingMonuments.size}")
+
+
+                val itineraries = itineraryManager.generateMultiDayItineraries(
+                    allMonuments = remainingMonuments,
+                    favoriteMonuments = favoriteMonuments,
+                    userLocation = userLocation!!,
+                    totalDays = totalDays,
                     visitType = visitType,
                     transportType = transportType,
-                    currentLocation = userLocation!!,
                     filteredMonuments = filteredMonuments
                 )
+
+
+
+                // Abrir actividad para mostrar itinerarios
+                val intent = Intent(this, ItinerariesActivity::class.java)
+                intent.putExtra("itineraries", itineraries as Serializable)
+                intent.putParcelableArrayListExtra("updatedFavorites", ArrayList(favoriteMonuments))
+                intent.putExtra("userLatitude", userLocation!!.latitude)
+                intent.putExtra("userLongitude", userLocation!!.longitude)
+                startActivity(intent)
             } else {
-                // Continuar con la generación completa de la ruta
-                val routes = routePlanner.generateRoute(
+
+                val routePlanner = RoutePlanner()
+                val (viableRoute, remainingMonuments, currentTime) = routePlanner.handleRouteGeneration(
                     allMonuments = filteredMonuments,
                     favoriteMonuments = favoriteMonuments,
+                    userLocation = userLocation!!,
                     selectedTime = selectedTime,
                     visitType = visitType,
                     transportType = transportType,
-                    userLocation = userLocation!!,
                     filteredMonuments = filteredMonuments.toMutableList()
                 )
-                if (routes.isNotEmpty()) {
-                    routePlanner.openRouteInGoogleMaps(this, userLocation!!, routes.first(), transportType)
+
+                if (viableRoute.isEmpty()) {
+                    Toast.makeText(
+                        this,
+                        "No es posible generar una ruta con el tiempo seleccionado.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    return
+                }
+
+                // Calcular el tiempo requerido solo con los favoritos
+                var tempCurrentTime = 0.0
+                if (favoriteMonuments.isNotEmpty()) {
+                    var tempLocation = userLocation
+                    favoriteMonuments.forEach { favorite ->
+                        val travelTime = routePlanner.calculateTravelTime(
+                            routePlanner.getDistanceBetweenPoints(
+                                tempLocation!!,
+                                GeoPoint(favorite.latitud, favorite.longitud)
+                            ),
+                            transportType
+                        )
+                        val visitTime =
+                            if (visitType == "Tour rápido") 0.5 else favorite.duracionVisita
+                        tempCurrentTime += travelTime + visitTime
+                        tempLocation = GeoPoint(favorite.latitud, favorite.longitud)
+                    }
+                }
+
+                // Mostrar el cuadro de diálogo si hay tiempo extra después de visitar los favoritos
+                if ((tempCurrentTime + 1) <= selectedTime.toDouble() && filteredMonuments.isNotEmpty()) {
+                    Log.d(
+                        "DialogCheck",
+                        "Mostrando cuadro de diálogo. Tiempo con favoritos: $tempCurrentTime, Tiempo disponible: $selectedTime"
+                    )
+                    routePlanner.checkForExtraTimeAndShowDialog(
+                        context = this,
+                        currentTime = tempCurrentTime,
+                        availableTime = selectedTime.toDouble(),
+                        route = favoriteMonuments.toMutableList(),
+                        remainingMonuments = monumentList.filterNot { favoriteMonuments.contains(it) }
+                            .toMutableList(),
+                        visitType = visitType,
+                        transportType = transportType,
+                        currentLocation = userLocation!!,
+                        filteredMonuments = filteredMonuments
+                    )
+                } else {
+                    // Continuar con la generación completa de la ruta
+                    val routes = routePlanner.generateRoute(
+                        allMonuments = filteredMonuments,
+                        favoriteMonuments = favoriteMonuments,
+                        selectedTime = selectedTime,
+                        visitType = visitType,
+                        transportType = transportType,
+                        userLocation = userLocation!!,
+                        filteredMonuments = filteredMonuments.toMutableList()
+                    )
+                    if (routes.isNotEmpty()) {
+                        routePlanner.openRouteInGoogleMaps(
+                            this,
+                            userLocation!!,
+                            routes.first(),
+                            transportType
+                        )
+                    }
                 }
             }
-
         }
     }
-
-
-
-
 
     private fun prepareMultiDayRoutes(days: Int) {
         val routePlanner = RoutePlanner()
