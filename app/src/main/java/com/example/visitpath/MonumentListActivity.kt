@@ -214,8 +214,13 @@ class MonumentListActivity : AppCompatActivity() {
                 val isThereFavorites = favoriteMonuments.isNotEmpty()
                 val monumentsToConsider = if (isThereFavorites) favoriteMonuments else filteredMonuments
 
+                Log.d("MonumentListActivity", "Monumentos totales antes de pasar a handleRouteGeneration:")
+                monumentList.forEach {
+                    Log.d("MonumentListActivity", "- ${it.nombre}, Latitud: ${it.latitud}, Longitud: ${it.longitud}")
+                }
+
                 val (viableRoute, remainingMonuments, currentTime) = routePlanner.handleRouteGeneration(
-                    allMonuments = filteredMonuments,
+                    allMonuments = monumentList,
                     favoriteMonuments = favoriteMonuments,
                     userLocation = userLocation!!,
                     selectedTime = selectedTime,
@@ -284,7 +289,7 @@ class MonumentListActivity : AppCompatActivity() {
                         currentTime = tempCurrentTime,
                         availableTime = selectedTime.toDouble(),
                         route = viableRoute.toMutableList(),
-                        remainingMonuments = filteredMonuments.filterNot { viableRoute.contains(it) }.toMutableList(),
+                        remainingMonuments = remainingMonuments.filterNot { viableRoute.contains(it) }.toMutableList(),
                         visitType = visitType,
                         transportType = transportType,
                         currentLocation = userLocation!!,
