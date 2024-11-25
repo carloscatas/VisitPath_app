@@ -72,8 +72,6 @@ class RoutePlanner {
 
         // Crear listas para priorización
         val filteredNonFavoriteMonuments = filteredMonuments.filterNot { favoriteMonuments.contains(it) }.toMutableList()
-        val unfilteredMonuments = remainingMonuments.filterNot { filteredMonuments.contains(it) }.toMutableList()
-
         val route = mutableListOf<Monument>()
         var currentTime = 0.0
         var currentLocation = userLocation
@@ -133,8 +131,6 @@ class RoutePlanner {
 
 
 
-
-
         // Devolver la ruta completa, envuelta en una lista de listas para cumplir con el tipo de retorno requerido
         return if (route.isNotEmpty()) {
             listOf(route)
@@ -142,6 +138,7 @@ class RoutePlanner {
             emptyList()
         }
     }
+
 
     fun handleRouteGeneration(
         allMonuments: List<Monument>,

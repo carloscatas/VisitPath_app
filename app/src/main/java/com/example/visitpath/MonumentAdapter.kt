@@ -13,13 +13,11 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 
-
 class MonumentAdapter(
     private var monumentList: MutableList<Monument>,
-    private val favoriteCallback: (Monument) -> Unit // Callback para manejar favoritos
-): RecyclerView.Adapter<MonumentAdapter.MonumentViewHolder>() {
-
-    private val favoriteMonuments = mutableSetOf<Monument>()
+    private val actionCallback: (Monument) -> Unit, // Callback para manejar acciones (favoritos o eliminar)
+    private val showDeleteIcon: Boolean = false // Si es true, muestra la papelera en vez de la estrella
+) : RecyclerView.Adapter<MonumentAdapter.MonumentViewHolder>() {
 
     class MonumentViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val nombreTextView: TextView = view.findViewById(R.id.monumentName)
@@ -30,8 +28,7 @@ class MonumentAdapter(
         val movilidadTextView: TextView = view.findViewById(R.id.monumentAccessibility)
         val audioguiaTextView: TextView = view.findViewById(R.id.monumentAudio)
         val monumentImageView: ImageView = view.findViewById(R.id.monumentImage)
-        val starIcon: ImageView = view.findViewById(R.id.starIcon)
-
+        val actionIcon: ImageView = view.findViewById(R.id.actionIcon) // Icono de favorito o papelera
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MonumentViewHolder {
@@ -43,21 +40,20 @@ class MonumentAdapter(
     override fun onBindViewHolder(holder: MonumentViewHolder, position: Int) {
         val monument = monumentList[position]
 
-        // Actualizar la vista de la estrella según el estado de favorito
-        updateStarIcon(holder.starIcon, monument.isFavorite)
+        // Actualizar el ícono según si estamos mostrando favoritos o papelera
+        updateActionIcon(holder.actionIcon, monument.isFavorite)
 
-        holder.starIcon.setOnClickListener {
-            monument.isFavorite = !monument.isFavorite
-            updateStarIcon(holder.starIcon, monument.isFavorite)
-            favoriteCallback(monument)
-
-            // Actualizar la lista de favoritos global
-            if (monument.isFavorite) {
-                if (!favoriteMonuments.contains(monument)) {
-                    favoriteMonuments.add(monument)
-                }
+        holder.actionIcon.setOnClickListener {
+            if (showDeleteIcon) {
+                // En el caso de OptimizationActivity, eliminar el monumento de la lista
+                monumentList.removeAt(position)
+                notifyItemRemoved(position)
+                actionCallback(monument) // Notificar sobre la acción realizada (en este caso, eliminación)
             } else {
-                favoriteMonuments.remove(monument)
+                // En el caso de MonumentListActivity, gestionar favoritos
+                monument.isFavorite = !monument.isFavorite
+                updateActionIcon(holder.actionIcon, monument.isFavorite)
+                actionCallback(monument)
             }
         }
 
@@ -94,16 +90,22 @@ class MonumentAdapter(
         }
     }
 
-    private fun updateStarIcon(starIcon: ImageView, isFavorite: Boolean) {
-        if (isFavorite) {
-            starIcon.setImageResource(R.drawable.ic_full_star) // Icono de estrella llena
-            starIcon.setColorFilter(android.graphics.Color.YELLOW) // Color amarillo
+    private fun updateActionIcon(actionIcon: ImageView, isFavorite: Boolean) {
+        if (showDeleteIcon) {
+            // Mostrar ícono de papelera si showDeleteIcon es true
+            actionIcon.setImageResource(R.drawable.ic_delete) // Reemplaza con el ícono de papelera
+            actionIcon.setColorFilter(android.graphics.Color.RED) // Color rojo para eliminar
         } else {
-            starIcon.setImageResource(R.drawable.ic_star) // Icono de estrella vacía
-            starIcon.setColorFilter(android.graphics.Color.GRAY) // Color gris
+            // Mostrar ícono de favorito si showDeleteIcon es false
+            if (isFavorite) {
+                actionIcon.setImageResource(R.drawable.ic_full_star) // Icono de estrella llena
+                actionIcon.setColorFilter(android.graphics.Color.YELLOW) // Color amarillo
+            } else {
+                actionIcon.setImageResource(R.drawable.ic_star) // Icono de estrella vacía
+                actionIcon.setColorFilter(android.graphics.Color.GRAY) // Color gris
+            }
         }
     }
-
 
     // Función para aplicar negrita solo al nombre del campo y no al valor
     private fun formatText(label: String, value: String): SpannableString {
@@ -123,12 +125,14 @@ class MonumentAdapter(
         monumentList.addAll(newMonuments)
         notifyDataSetChanged()
     }
+
     fun updateFavorites(favorites: List<Monument>) {
         for (monument in monumentList) {
             monument.isFavorite = favorites.contains(monument)
         }
         notifyDataSetChanged()
     }
-
+    fun getCurrentMonumentList(): MutableList<Monument> {
+        return monumentList
+    }
 }
-

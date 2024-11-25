@@ -66,15 +66,20 @@ class MonumentListActivity : AppCompatActivity() {
         // Configuramos el RecyclerView y el adapter
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        monumentAdapter = MonumentAdapter(mutableListOf()) { monument ->
-            if (monument.isFavorite) {
-                if (!favoriteMonuments.contains(monument)) {
-                    favoriteMonuments.add(monument)
+        monumentAdapter = MonumentAdapter(
+            mutableListOf(),
+            actionCallback = { monument ->
+                if (monument.isFavorite) {
+                    if (!favoriteMonuments.contains(monument)) {
+                        favoriteMonuments.add(monument)
+                    }
+                } else {
+                    favoriteMonuments.remove(monument)
                 }
-            } else {
-                favoriteMonuments.remove(monument)
-            }
-        }
+            },
+            showDeleteIcon = false // En esta pantalla se muestra el ícono de favorito, no el de eliminar.
+        )
+
         recyclerView.adapter = monumentAdapter
 
         // Configurar el botón para abrir la pantalla de favoritos

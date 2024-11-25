@@ -12,28 +12,16 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- Icono de la estrella para marcar como prioritario -->
+        <!-- Icono de acción para marcar como favorito o eliminar -->
         <ImageView
-            android:id="@+id/starIcon"
+            android:id="@+id/actionIcon"
             android:layout_width="24dp"
             android:layout_height="24dp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             android:layout_margin="8dp"
-            android:contentDescription="Favorito"
+            android:contentDescription="Acción (favorito o eliminar)"
             app:srcCompat="@drawable/ic_star" />
-
-        <ImageView
-            android:id="@+id/removeIcon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/starIcon"
-            android:layout_marginEnd="8dp"
-            android:contentDescription="@string/remove_icon"
-            android:visibility="gone"
-            app:srcCompat="@drawable/ic_delete" />
-
 
         <!-- ImageView para la imagen de fondo -->
         <ImageView
@@ -146,8 +134,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/monumentAccessibility"
             app:layout_constraintEnd_toEndOf="parent" />
-
-
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>

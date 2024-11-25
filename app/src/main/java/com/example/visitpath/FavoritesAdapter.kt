@@ -14,7 +14,7 @@ class FavoritesAdapter(
 ) : RecyclerView.Adapter<FavoritesAdapter.FavoritesViewHolder>() {
 
     class FavoritesViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val starIcon: ImageView = view.findViewById(R.id.starIcon)
+        val actionIcon: ImageView = view.findViewById(R.id.actionIcon)
         val monumentImageView: ImageView = view.findViewById(R.id.monumentImage)
         val monumentName: TextView = view.findViewById(R.id.monumentName)
         val monumentDescription: TextView = view.findViewById(R.id.monumentDescription)
@@ -49,11 +49,11 @@ class FavoritesAdapter(
         holder.monumentAudio.text = "Audioguía: ${if (monument.audioURL.isNotEmpty()) "Sí" else "No"}"
 
         // Establece la estrella como seleccionada
-        holder.starIcon.setImageResource(R.drawable.ic_full_star)
-        holder.starIcon.setColorFilter(android.graphics.Color.YELLOW)
+        holder.actionIcon.setImageResource(R.drawable.ic_full_star)
+        holder.actionIcon.setColorFilter(android.graphics.Color.YELLOW)
 
         // Configura el clic en la estrella para eliminar de favoritos
-        holder.starIcon.setOnClickListener {
+        holder.actionIcon.setOnClickListener {
             onRemoveFavorite(monument)
         }
     }
