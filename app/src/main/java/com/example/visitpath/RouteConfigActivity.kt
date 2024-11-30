@@ -12,7 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 
 class RouteConfigActivity : AppCompatActivity() {
 
-    private var selectedTime: Int = 1 // Tiempo en horas (inicializa en 1)
+    private var selectedTime: Int = 1
     private var visitType: String = "Tour completo"
     private var transportType: String = "Caminando"
 
@@ -32,7 +32,7 @@ class RouteConfigActivity : AppCompatActivity() {
                 selectedTimeText.text = if (progress <= 10) {
                     "$progress ${if (progress == 1) "hora" else "horas"}"
                 } else {
-                    val days = progress - 10
+                    val days = progress - 9
                     "$days ${if (days == 1) "día" else "días"}"
                 }
             }

@@ -189,8 +189,8 @@ class MonumentListActivity : AppCompatActivity() {
             val routePlanner = RoutePlanner()
 
             // Manejo de más de un día de selección
-            if (selectedTime > 11) {
-                val totalDays = selectedTime - 10
+            if (selectedTime > 10) {
+                val totalDays = selectedTime - 9
                 val itineraryManager = ItineraryManager()
 
                 val remainingMonuments = monumentList.filterNot {
