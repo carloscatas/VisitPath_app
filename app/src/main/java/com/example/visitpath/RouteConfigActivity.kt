@@ -26,6 +26,7 @@ class RouteConfigActivity : AppCompatActivity() {
         val transportTypeGroup: RadioGroup = findViewById(R.id.transportTypeGroup)
         val applyRouteConfigButton: Button = findViewById(R.id.applyRouteConfigButton)
 
+        timeSeekBar.max = 14
         timeSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 selectedTime = progress
