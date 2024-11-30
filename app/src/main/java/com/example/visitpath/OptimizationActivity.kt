@@ -221,9 +221,11 @@ class OptimizationActivity : AppCompatActivity() {
                     index++
                 }
             }
+            val optimizedRoute = routePlanner.optimizeRouteOrder(userLocation!!, initialRoute)
+
 
             // Mostrar la ruta en Google Maps
-            if (initialRoute.isNotEmpty()) {
+            if (optimizedRoute.isNotEmpty()) {
                 Log.d("OptimizationActivity", "Ruta final generada, lista para ser mostrada en Google Maps:")
                 initialRoute.forEach { monument ->
                     Log.d("OptimizationActivity", "- ${monument.nombre}, Latitud: ${monument.latitud}, Longitud: ${monument.longitud}")
@@ -232,7 +234,7 @@ class OptimizationActivity : AppCompatActivity() {
                 routePlanner.openRouteInGoogleMaps(
                     context = this,
                     userLocation = userLocation!!,
-                    route = initialRoute,
+                    route = optimizedRoute,
                     transportMode = transportType
                 )
             } else {

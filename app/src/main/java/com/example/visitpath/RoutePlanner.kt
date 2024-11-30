@@ -454,10 +454,7 @@ class RoutePlanner {
         return route.take(10) // Limitar la ruta a un máximo de 10 monumentos
     }
 
-    fun optimizeRouteOrder(
-        currentLocation: GeoPoint,
-        monuments: List<Monument>
-    ): List<Monument> {
+    fun optimizeRouteOrder(currentLocation: GeoPoint, monuments: List<Monument>): List<Monument> {
         val orderedRoute = mutableListOf<Monument>()
         val remainingMonuments = monuments.toMutableList()
 
