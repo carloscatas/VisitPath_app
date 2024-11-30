@@ -215,90 +215,57 @@ class MonumentListActivity : AppCompatActivity() {
                 intent.putExtra("userLongitude", userLocation!!.longitude)
                 startActivity(intent)
             } else {
-                // Diferente manejo de favoritos y filtrados en función de su existencia
-                val isThereFavorites = favoriteMonuments.isNotEmpty()
-                val monumentsToConsider = if (isThereFavorites) favoriteMonuments else filteredMonuments
-
-                Log.d("MonumentListActivity", "Monumentos totales antes de pasar a handleRouteGeneration:")
-                monumentList.forEach {
-                    Log.d("MonumentListActivity", "- ${it.nombre}, Latitud: ${it.latitud}, Longitud: ${it.longitud}")
-                }
-
-                val (viableRoute, remainingMonuments, currentTime) = routePlanner.handleRouteGeneration(
-                    allMonuments = monumentList,
-                    favoriteMonuments = favoriteMonuments,
-                    userLocation = userLocation!!,
-                    selectedTime = selectedTime,
-                    visitType = visitType,
-                    transportType = transportType,
-                    filteredMonuments = filteredMonuments.toMutableList()
+                // **Cálculo del tiempo requerido para los favoritos y filtrados**
+                val totalTimeForFavorites = routePlanner.calculateTotalTimeForMonuments(
+                    favoriteMonuments,
+                    userLocation!!,
+                    transportType,
+                    visitType
                 )
 
-                // LOG 2: Después de Generar la Ruta
-                Log.d("TestLogs", "Generación de Ruta Completada")
-                Log.d("TestLogs", "Viable Route Size: ${viableRoute.size}")
-                Log.d("TestLogs", "Current Time after Route Generation: $currentTime horas")
+                val totalTimeForFiltered = routePlanner.calculateTotalTimeForMonuments(
+                    filteredMonuments,
+                    if (favoriteMonuments.isNotEmpty()) {
+                        GeoPoint(favoriteMonuments.last().latitud, favoriteMonuments.last().longitud)
+                    } else {
+                        userLocation!!
+                    },
+                    transportType,
+                    visitType
+                )
 
-                viableRoute.forEach { monument ->
-                    Log.d("TestLogs", "Monumento en Ruta Viable: ${monument.nombre}, Latitud: ${monument.latitud}, Longitud: ${monument.longitud}")
+                val timeNeeded = totalTimeForFavorites + totalTimeForFiltered
+
+                // LOG 2: Tiempo Total para Favoritos y Filtrados
+                Log.d("TestLogs", "Tiempo Necesario para Favoritos y Filtrados: $timeNeeded horas")
+
+                var remainingTime = selectedTime.toDouble() - timeNeeded
+
+                if (selectedTime > 8) {
+                    remainingTime -= 1.0
                 }
 
-                if (viableRoute.isEmpty()) {
-                    Toast.makeText(
-                        this,
-                        "No es posible generar una ruta con el tiempo seleccionado.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                    Log.d("TestLogs", "== FIN PRUEBA: No se pudo generar una ruta. ==")
-                    return
-                }
-
-                // Cálculo del tiempo requerido solo con los favoritos, si existen
-                var tempCurrentTime = 0.0
-                var tempLocation = userLocation
-
-                // LOG 3: Tiempo para Favoritos
-                if (isThereFavorites) {
-                    Log.d("TestLogs", "Iniciando Cálculo del Tiempo con Favoritos")
-                    favoriteMonuments.forEach { favorite ->
-                        val travelTime = routePlanner.calculateTravelTime(
-                            routePlanner.getDistanceBetweenPoints(
-                                tempLocation!!,
-                                GeoPoint(favorite.latitud, favorite.longitud)
-                            ),
-                            transportType
-                        )
-                        val visitTime = if (visitType == "Tour rápido") 0.5 else favorite.duracionVisita
-                        tempCurrentTime += travelTime + visitTime
-                        tempLocation = GeoPoint(favorite.latitud, favorite.longitud)
-                        Log.d("TestLogs", "Monumento: ${favorite.nombre}, Travel Time: $travelTime horas, Visit Time: $visitTime horas, Tiempo Acumulado: $tempCurrentTime horas")
-                    }
-                } else {
-                    Log.d("TestLogs", "No hay favoritos, considerando únicamente monumentos filtrados.")
-                    tempCurrentTime = currentTime // Si no hay favoritos, simplemente asignamos el tiempo acumulado de la ruta viable generada
-                }
-
-                // Mostrar el cuadro de diálogo si hay tiempo extra después de visitar los favoritos
-                val timeNeededForFavorites = tempCurrentTime
-                val remainingTime = selectedTime.toDouble() - timeNeededForFavorites
-
-                // LOG 4: Verificar si Mostrar el Cuadro de Diálogo
-                Log.d("TestLogs", "Tiempo Necesario para Favoritos: $timeNeededForFavorites horas")
-                Log.d("TestLogs", "Tiempo Restante: $remainingTime horas")
-
-                if (remainingTime >= 1 && filteredMonuments.isNotEmpty()) {
+                // Mostrar el cuadro de diálogo si hay tiempo extra después de visitar favoritos y filtrados
+                if (remainingTime >= 0.5 && filteredMonuments.isNotEmpty()) {
                     Log.d("TestLogs", "Mostrando Cuadro de Diálogo. Tiempo Suficiente Detectado")
+
+                    val remainingMonuments = monumentList.filterNot {
+                        favoriteMonuments.contains(it) || filteredMonuments.contains(it)
+                    }.toMutableList()
 
                     routePlanner.checkForExtraTimeAndShowDialog(
                         context = this,
-                        currentTime = tempCurrentTime,
+                        currentTime = timeNeeded,
+                        selectedTime = selectedTime,
+                        remainingTime = remainingTime,
                         availableTime = selectedTime.toDouble(),
-                        route = viableRoute.toMutableList(),
-                        remainingMonuments = remainingMonuments.filterNot { viableRoute.contains(it) }.toMutableList(),
+                        route = (favoriteMonuments + filteredMonuments).toMutableList(),
+                        remainingMonuments = remainingMonuments,
                         visitType = visitType,
                         transportType = transportType,
                         currentLocation = userLocation!!,
-                        filteredMonuments = filteredMonuments
+                        filteredMonuments = filteredMonuments,
+                        favoriteMonuments = favoriteMonuments
                     )
                 } else {
                     // Continuar con la generación completa de la ruta
@@ -324,10 +291,11 @@ class MonumentListActivity : AppCompatActivity() {
                 }
             }
 
-            // LOG 5: Fin de la Prueba
+            // LOG 3: Fin de la Prueba
             Log.d("TestLogs", "== FIN PRUEBA ==")
         }
     }
+
 
 
 

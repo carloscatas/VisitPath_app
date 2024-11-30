@@ -218,22 +218,22 @@ class RoutePlanner {
         currentTime: Double,
         availableTime: Double,
         route: MutableList<Monument>,
+        selectedTime: Int,
+        remainingTime: Double,
         remainingMonuments: MutableList<Monument>,
         visitType: String,
         transportType: String,
         currentLocation: GeoPoint,
-        filteredMonuments: MutableList<Monument>
+        filteredMonuments: MutableList<Monument>,
+        favoriteMonuments: MutableList<Monument>
     ) {
         val dialogBuilder = AlertDialog.Builder(context)
         dialogBuilder.setTitle("Optimizar Ruta")
         dialogBuilder.setMessage("Tiene tiempo de visitar más puntos de interés. ¿Quiere optimizar la ruta automáticamente o añadir más puntos a favoritos?")
 
         dialogBuilder.setPositiveButton("Optimizar Ruta") { _, _ ->
-            // En lugar de optimizar directamente, abre la actividad de optimización
-            Log.d("RoutePlanner", "Monumentos restantes a transferir: ${remainingMonuments.size}")
-            remainingMonuments.forEach {
-                Log.d("RoutePlanner", "- ${it.nombre}, Latitud: ${it.latitud}, Longitud: ${it.longitud}")
-            }
+            // Añadir un log para verificar si `selectedTime` se está pasando correctamente
+            Log.d("RoutePlanner", "Tiempo restante tras favoritos y filtrados para la optimización: $remainingTime")
 
             // En lugar de optimizar directamente, abre la actividad de optimización
             val intent = Intent(context, OptimizationActivity::class.java)
@@ -241,13 +241,22 @@ class RoutePlanner {
             // Transferir los monumentos restantes (excluyendo favoritos y ya visitados)
             intent.putParcelableArrayListExtra("remainingMonuments", ArrayList(remainingMonuments))
 
+            // Transferir los favoritos
+            intent.putParcelableArrayListExtra("favoriteMonuments", ArrayList(favoriteMonuments))
+
+            // Transferir los filtrados
+            intent.putParcelableArrayListExtra("filteredMonuments", ArrayList(filteredMonuments))
+
             // Transferir la ubicación del usuario desglosada en latitud y longitud
             intent.putExtra("userLatitude", currentLocation.latitude)
             intent.putExtra("userLongitude", currentLocation.longitude)
 
-            // Transferir los tipos de visita y transporte seleccionados
+            // Transferir los tipos de visita,tiempo y transporte seleccionados
             intent.putExtra("transportType", transportType)
             intent.putExtra("visitType", visitType)
+            intent.putExtra("remainingTime", remainingTime)
+            intent.putExtra("selectedTime", selectedTime)
+
 
             // Iniciar la actividad de optimización
             (context as AppCompatActivity).startActivityForResult(intent, ROUTE_CONFIG_REQUEST_CODE)
@@ -266,6 +275,29 @@ class RoutePlanner {
     fun getDistanceBetweenPoints(start: GeoPoint, end: GeoPoint): Double {
         return calculateDistance(start, end)
     }
+    fun calculateTotalTimeForMonuments(
+        monuments: List<Monument>,
+        userLocation: GeoPoint,
+        transportType: String,
+        visitType: String
+    ): Double {
+        var totalTime = 0.0
+        var currentLocation = userLocation
+        val visitDurationQuick = 0.5
+        val visitDurationNormal = 1.0
+
+        monuments.forEach { monument ->
+            val travelTime = calculateTravelTime(
+                calculateDistance(currentLocation, GeoPoint(monument.latitud, monument.longitud)),
+                transportType
+            )
+            val visitTime = if (visitType == "Tour rápido") visitDurationQuick else visitDurationNormal
+            totalTime += travelTime + visitTime
+            currentLocation = GeoPoint(monument.latitud, monument.longitud)
+        }
+        return totalTime
+    }
+
 
     /**
      * Construye una URL para abrir la ruta en Google Maps con los puntos seleccionados.
@@ -318,4 +350,134 @@ class RoutePlanner {
             ).show()
         }
     }
+
+    fun generateFinalRoute(
+        favoriteMonuments: List<Monument>,
+        filteredMonuments: List<Monument>,
+        remainingMonuments: List<Monument>,
+        userLocation: GeoPoint,
+        transportType: String,
+        availableTime: Int = 10 // Por defecto, máximo 10 horas disponibles
+    ): List<Monument> {
+        val route = mutableListOf<Monument>()
+        var currentLocation = userLocation
+        var currentTime = 0.0
+        val visitDurationQuick = 0.5 // 30 minutos por visita para tour rápido
+
+        // Paso 1: Añadir favoritos
+        val favoritesMutable = favoriteMonuments.toMutableList()
+        Log.d("RoutePlanner", "Favoritos recibidos (${favoritesMutable.size}):")
+        favoritesMutable.forEach { Log.d("RoutePlanner", it.nombre) }
+
+        while (favoritesMutable.isNotEmpty()) {
+            val nextFavorite = favoritesMutable.minByOrNull {
+                calculateDistance(currentLocation, GeoPoint(it.latitud, it.longitud))
+            }
+
+            if (nextFavorite != null) {
+                val travelTime = calculateTravelTime(
+                    calculateDistance(currentLocation, GeoPoint(nextFavorite.latitud, nextFavorite.longitud)),
+                    transportType
+                )
+                val visitTime = visitDurationQuick
+                val totalTime = travelTime + visitTime
+
+                if (currentTime + totalTime <= availableTime) {
+                    route.add(nextFavorite)
+                    currentTime += totalTime
+                    currentLocation = GeoPoint(nextFavorite.latitud, nextFavorite.longitud)
+                    favoritesMutable.remove(nextFavorite)
+                } else {
+                    break // No hay tiempo suficiente para más favoritos
+                }
+            }
+        }
+
+        // Paso 2: Añadir puntos filtrados (no favoritos)
+        val filteredNonFavoriteMonuments = filteredMonuments.filterNot { favoriteMonuments.contains(it) }.toMutableList()
+        Log.d("RoutePlanner", "Filtrados recibidos (${filteredNonFavoriteMonuments.size}):")
+        filteredNonFavoriteMonuments.forEach { Log.d("RoutePlanner", it.nombre) }
+
+        while (currentTime < availableTime && filteredNonFavoriteMonuments.isNotEmpty()) {
+            val nextFiltered = filteredNonFavoriteMonuments.minByOrNull {
+                calculateDistance(currentLocation, GeoPoint(it.latitud, it.longitud))
+            }
+
+            if (nextFiltered != null) {
+                val travelTime = calculateTravelTime(
+                    calculateDistance(currentLocation, GeoPoint(nextFiltered.latitud, nextFiltered.longitud)),
+                    transportType
+                )
+                val visitTime = visitDurationQuick
+                val totalTime = travelTime + visitTime
+
+                if (currentTime + totalTime <= availableTime) {
+                    route.add(nextFiltered)
+                    currentTime += totalTime
+                    currentLocation = GeoPoint(nextFiltered.latitud, nextFiltered.longitud)
+                    filteredNonFavoriteMonuments.remove(nextFiltered)
+                } else {
+                    break // No hay tiempo suficiente para más filtrados
+                }
+            }
+        }
+
+        // Paso 3: Añadir puntos restantes (si hay espacio)
+        val remainingMonumentsMutable = remainingMonuments.toMutableList()
+        Log.d("RoutePlanner", "Monumentos restantes (${remainingMonumentsMutable.size}):")
+        remainingMonumentsMutable.forEach { Log.d("RoutePlanner", it.nombre) }
+
+        while (currentTime < availableTime && remainingMonumentsMutable.isNotEmpty() && route.size < 10) {
+            val nextMonument = remainingMonumentsMutable.minByOrNull {
+                calculateDistance(currentLocation, GeoPoint(it.latitud, it.longitud))
+            }
+
+            if (nextMonument != null) {
+                val travelTime = calculateTravelTime(
+                    calculateDistance(currentLocation, GeoPoint(nextMonument.latitud, nextMonument.longitud)),
+                    transportType
+                )
+                val visitTime = visitDurationQuick
+                val totalTime = travelTime + visitTime
+
+                if (currentTime + totalTime <= availableTime) {
+                    route.add(nextMonument)
+                    currentTime += totalTime
+                    currentLocation = GeoPoint(nextMonument.latitud, nextMonument.longitud)
+                    remainingMonumentsMutable.remove(nextMonument)
+                } else {
+                    break // No hay tiempo suficiente para más puntos restantes
+                }
+            }
+        }
+
+        return route.take(10) // Limitar la ruta a un máximo de 10 monumentos
+    }
+
+    fun optimizeRouteOrder(
+        currentLocation: GeoPoint,
+        monuments: List<Monument>
+    ): List<Monument> {
+        val orderedRoute = mutableListOf<Monument>()
+        val remainingMonuments = monuments.toMutableList()
+
+        var location = currentLocation
+
+        // Ordenar los monumentos por proximidad sucesiva
+        while (remainingMonuments.isNotEmpty()) {
+            // Buscar el monumento más cercano desde la ubicación actual
+            val nextMonument = remainingMonuments.minByOrNull {
+                calculateDistance(location, GeoPoint(it.latitud, it.longitud))
+            }
+
+            if (nextMonument != null) {
+                orderedRoute.add(nextMonument)
+                location = GeoPoint(nextMonument.latitud, nextMonument.longitud)
+                remainingMonuments.remove(nextMonument)
+            }
+        }
+
+        return orderedRoute
+    }
+
 }
