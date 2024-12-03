@@ -27,6 +27,17 @@
             android:name="com.google.android.maps.v2.API_KEY"
             android:value="AIzaSyBRqF8SOEk36xfS8HWiFE5AJ2aIopQhTnE"/>
 
+        <!-- SplashActivity como la actividad principal -->
+        <activity
+            android:name=".SplashActivity"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
         <!-- Declaración de la actividad MonumentDetailActivity -->
         <activity android:name=".MonumentDetailActivity" />
         <activity
@@ -34,10 +45,7 @@
             android:exported="true"
             android:label="VisitPath"
             android:theme="@style/Theme.VisitPath">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+
         </activity>
         <activity android:name=".RouteConfigActivity" />
 

@@ -87,6 +87,9 @@ dependencies {
     kapt("com.github.bumptech.glide:compiler:4.14.2")
     implementation ("com.google.android.libraries.places:places:3.0.0")
     implementation ("com.android.volley:volley:1.2.1")
+    implementation ("com.squareup.okhttp3:okhttp:4.9.3")
+    implementation ("com.google.code.gson:gson:2.8.8")
+
 }
 
 apply(plugin = "com.google.gms.google-services")

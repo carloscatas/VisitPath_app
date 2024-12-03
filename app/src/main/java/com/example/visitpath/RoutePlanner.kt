@@ -327,13 +327,35 @@ class RoutePlanner {
         // Construir waypoints (hasta 10 puntos debido a las limitaciones de Google Maps)
         val waypoints = uniqueRoute.dropLast(1).joinToString("|") { "${it.latitud},${it.longitud}" }
 
-        val gmmIntentUri = Uri.parse(
-            "https://www.google.com/maps/dir/?api=1" +
-                    "&origin=$origin" +
-                    "&destination=$destination" +
-                    if (waypoints.isNotEmpty()) "&waypoints=$waypoints" else "" +
-                            "&travelmode=${transportMode.lowercase()}"
-        )
+        // Valida el modo de transporte
+        val validTransportMode = when (transportMode.lowercase()) {
+            "caminando" -> "walking"
+            "público" -> "transit"
+            "privado" -> "driving"
+            else -> "driving"
+        }
+
+        // Construir la URI según el modo de transporte
+        val gmmIntentUri: Uri = if (validTransportMode == "walking" && waypoints.isNotEmpty()) {
+            Uri.parse(
+                "https://www.google.com/maps/dir/?api=1" +
+                        "&origin=$origin" +
+                        "&destination=$destination" +
+                        "&waypoints=$waypoints"+
+                        "&travelmode=walking"
+            )
+        } else {
+            Uri.parse(
+                "https://www.google.com/maps/dir/?api=1" +
+                        "&origin=$origin" +
+                        "&destination=$destination" +
+                        if (waypoints.isNotEmpty()) "&waypoints=$waypoints" else "" +
+                                "&travelmode=$validTransportMode"
+            )
+        }
+
+        // Log para verificar la URI generada
+        Log.d("openRouteInGoogleMaps", "URI generada: $gmmIntentUri")
 
         // Crear un Intent para abrir Google Maps
         val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
@@ -350,6 +372,8 @@ class RoutePlanner {
             ).show()
         }
     }
+
+
 
     fun generateFinalRoute(
         favoriteMonuments: List<Monument>,
