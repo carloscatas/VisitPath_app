@@ -2,4 +2,7 @@
     <string name="app_name" translatable="false">VisitPath</string>
     <string name="monument_image_desc" translatable="false">Descripción de la imagen del monumento</string>
     <string name="remove_icon">Eliminar</string>
+    <string name="no_results_text">No se encontraron resultados. Intenta modificar los filtros.</string>
+    <string name="no_results_image">Sin resultados</string>
+
 </resources>

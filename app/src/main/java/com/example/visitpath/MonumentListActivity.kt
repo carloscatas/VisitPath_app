@@ -8,8 +8,10 @@ import android.os.Bundle
 import android.transition.Fade
 import android.util.Log
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.CheckBox
 import android.widget.ImageButton
+import android.widget.RelativeLayout
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
@@ -34,6 +36,7 @@ class MonumentListActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var monumentAdapter: MonumentAdapter
+    private lateinit var emptyStateView: RelativeLayout
     private val db = FirebaseFirestore.getInstance()
     private val LOCATION_PERMISSION_REQUEST_CODE = 1000
     private val ROUTE_CONFIG_REQUEST_CODE = 2
@@ -59,6 +62,8 @@ class MonumentListActivity : AppCompatActivity() {
         window.enterTransition = Fade()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_monument_list)
+        emptyStateView = findViewById(R.id.emptyStateView)
+
 
         // Inicializar Google Places
         Places.initialize(applicationContext, "AIzaSyBRqF8SOEk36xfS8HWiFE5AJ2aIopQhTnE")
@@ -215,6 +220,19 @@ class MonumentListActivity : AppCompatActivity() {
                 intent.putExtra("userLongitude", userLocation!!.longitude)
                 startActivity(intent)
             } else {
+                // Combinar favoritos y filtrados como representación de la ruta
+                val combinedRoute = favoriteMonuments + filteredMonuments
+                if (transportType.lowercase() == "público" && combinedRoute.size > 2) {
+                    AlertDialog.Builder(this)
+                        .setTitle("Transporte Público no soportado")
+                        .setMessage("No es posible generar rutas con múltiples paradas en transporte público. Elige otro medio de transporte.")
+                        .setPositiveButton("OK") { dialog, _ ->
+                            dialog.dismiss()
+                        }
+                        .show()
+                    return // Detenemos aquí para evitar que continúe con la optimización
+                }
+
                 // **Cálculo del tiempo requerido para los favoritos y filtrados**
                 val totalTimeForFavorites = routePlanner.calculateTotalTimeForMonuments(
                     favoriteMonuments,
@@ -471,6 +489,15 @@ class MonumentListActivity : AppCompatActivity() {
         // Actualizar el adaptador con los monumentos filtrados y ordenados
         this.filteredMonuments = sortedMonuments.toMutableList()
         monumentAdapter.updateData(this.filteredMonuments)
+
+        // Mostrar estado vacío si no hay resultados
+        if (filteredMonuments.isEmpty()) {
+            recyclerView.visibility = View.GONE
+            emptyStateView.visibility = View.VISIBLE
+        } else {
+            recyclerView.visibility = View.VISIBLE
+            emptyStateView.visibility = View.GONE
+        }
     }
 
 

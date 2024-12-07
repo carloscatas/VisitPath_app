@@ -103,6 +103,38 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Vista para mostrar "Sin resultados" -->
+    <RelativeLayout
+        android:id="@+id/emptyStateView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:gravity="center"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageView
+            android:id="@+id/emptyStateImage"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:src="@drawable/ic_no_results"
+            android:contentDescription="@string/no_results_image"
+            android:layout_centerHorizontal="true" />
+
+        <TextView
+            android:id="@+id/emptyStateText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/emptyStateImage"
+            android:layout_marginTop="16dp"
+            android:text="@string/no_results_text"
+            android:textSize="18sp"
+            android:textColor="#808080"
+            android:gravity="center" />
+    </RelativeLayout>
+
     <!-- Botón flotante para crear una ruta -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_create_route"

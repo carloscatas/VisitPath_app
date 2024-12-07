@@ -320,6 +320,21 @@ class RoutePlanner {
         // Eliminar duplicados de la lista de monumentos (basado en latitud y longitud)
         val uniqueRoute = route.distinctBy { Pair(it.latitud, it.longitud) }
 
+        // Verificar si hay múltiples waypoints
+        val hasWaypoints = uniqueRoute.size > 2
+
+        // Mostrar alerta si transporte público con múltiples waypoints
+        if (transportMode.lowercase() == "público" && hasWaypoints) {
+            AlertDialog.Builder(context)
+                .setTitle("Transporte Público no soportado")
+                .setMessage("No es posible generar rutas con múltiples paradas en transporte público. Elige otro medio de transporte.")
+                .setPositiveButton("OK") { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .show()
+            return
+        }
+
         // Establecer el punto de origen y el destino de la ruta
         val origin = "${userLocation.latitude},${userLocation.longitude}"
         val destination = "${uniqueRoute.last().latitud},${uniqueRoute.last().longitud}"
