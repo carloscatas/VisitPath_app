@@ -4,5 +4,6 @@
     <string name="remove_icon">Eliminar</string>
     <string name="no_results_text">No se encontraron resultados. Intenta modificar los filtros.</string>
     <string name="no_results_image">Sin resultados</string>
+    <string name="open_google_maps">Abrir con Google Maps</string>
 
 </resources>

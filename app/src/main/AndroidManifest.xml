@@ -20,7 +20,7 @@
         <activity android:name=".FavoritesActivity" />
         <activity android:name=".ItinerariesActivity" />
         <activity android:name=".OptimizationActivity" />
-
+        <activity android:name=".RoutePreviewActivity" />
 
         <!-- Clave de API de Google Maps -->
         <meta-data

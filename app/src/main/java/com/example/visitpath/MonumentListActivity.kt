@@ -218,6 +218,7 @@ class MonumentListActivity : AppCompatActivity() {
                 intent.putParcelableArrayListExtra("updatedFavorites", ArrayList(favoriteMonuments))
                 intent.putExtra("userLatitude", userLocation!!.latitude)
                 intent.putExtra("userLongitude", userLocation!!.longitude)
+                intent.putExtra("transportType", transportType)
                 startActivity(intent)
             } else {
                 // Combinar favoritos y filtrados como representación de la ruta
@@ -299,12 +300,13 @@ class MonumentListActivity : AppCompatActivity() {
                     )
                     if (routes.isNotEmpty()) {
                         Log.d("TestLogs", "Generando Ruta Completa y Abriendo en Google Maps")
-                        routePlanner.openRouteInGoogleMaps(
-                            this,
-                            userLocation!!,
-                            routes.first(),
-                            transportType
-                        )
+                        val intent = Intent(this, RoutePreviewActivity::class.java)
+                        intent.putParcelableArrayListExtra("route", ArrayList(routes.first()))
+                        intent.putExtra("userLatitude", userLocation!!.latitude)
+                        intent.putExtra("userLongitude", userLocation!!.longitude)
+                        intent.putExtra("transportMode", transportType)
+                        startActivity(intent)
+
                     }
                 }
             }

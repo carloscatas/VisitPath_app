@@ -257,7 +257,6 @@ class RoutePlanner {
             intent.putExtra("remainingTime", remainingTime)
             intent.putExtra("selectedTime", selectedTime)
 
-
             // Iniciar la actividad de optimización
             (context as AppCompatActivity).startActivityForResult(intent, ROUTE_CONFIG_REQUEST_CODE)
         }

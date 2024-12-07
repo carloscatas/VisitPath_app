@@ -1,5 +1,6 @@
 package com.example.visitpath
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
@@ -32,7 +33,7 @@ class OptimizationActivity : AppCompatActivity() {
         userLocation = if (!userLatitude.isNaN() && !userLongitude.isNaN()) {
             GeoPoint(userLatitude, userLongitude)
         } else {
-            null // Si no se obtuvo correctamente, `userLocation` será `null`
+            null    // Si no se obtuvo correctamente, `userLocation` será `null`
         }
 
         if (userLocation == null) {
@@ -224,19 +225,21 @@ class OptimizationActivity : AppCompatActivity() {
             val optimizedRoute = routePlanner.optimizeRouteOrder(userLocation!!, initialRoute)
 
 
-            // Mostrar la ruta en Google Maps
+            // Abrir la ruta final
             if (optimizedRoute.isNotEmpty()) {
                 Log.d("OptimizationActivity", "Ruta final generada, lista para ser mostrada en Google Maps:")
                 initialRoute.forEach { monument ->
                     Log.d("OptimizationActivity", "- ${monument.nombre}, Latitud: ${monument.latitud}, Longitud: ${monument.longitud}")
                 }
 
-                routePlanner.openRouteInGoogleMaps(
-                    context = this,
-                    userLocation = userLocation!!,
-                    route = optimizedRoute,
-                    transportMode = transportType
-                )
+                val intent = Intent(this, RoutePreviewActivity::class.java)
+                intent.putParcelableArrayListExtra("route", ArrayList(optimizedRoute))
+                intent.putExtra("userLatitude", userLocation!!.latitude)
+                intent.putExtra("userLongitude", userLocation!!.longitude)
+                intent.putExtra("transportMode", transportType)
+                startActivity(intent)
+
+
             } else {
                 Toast.makeText(this, "No se pudo generar una ruta viable.", Toast.LENGTH_SHORT).show()
                 Log.d("OptimizationActivity", "No se pudo generar una ruta viable.")

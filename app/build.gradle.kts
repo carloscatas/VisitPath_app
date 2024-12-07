@@ -89,6 +89,8 @@ dependencies {
     implementation ("com.android.volley:volley:1.2.1")
     implementation ("com.squareup.okhttp3:okhttp:4.9.3")
     implementation ("com.google.code.gson:gson:2.8.8")
+    implementation ("com.google.android.material:material:1.9.0")
+
 
 }
 

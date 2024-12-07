@@ -1,5 +1,6 @@
 package com.example.visitpath
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.LinearLayout
@@ -10,6 +11,8 @@ import com.google.firebase.firestore.GeoPoint
 class ItinerariesActivity : AppCompatActivity() {
 
     private var userLocation: GeoPoint = GeoPoint(0.0, 0.0)
+    private var transportType: String = "Caminando"
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,6 +23,9 @@ class ItinerariesActivity : AppCompatActivity() {
             intent.getDoubleExtra("userLatitude", 0.0),
             intent.getDoubleExtra("userLongitude", 0.0)
         )
+
+        // Recuperar el modo de transporte desde el intent
+        transportType = intent.getStringExtra("transportType") ?: "Caminando"
 
         val itineraries = intent.getSerializableExtra("itineraries") as? List<List<Monument>>
             ?: emptyList()
@@ -32,13 +38,13 @@ class ItinerariesActivity : AppCompatActivity() {
             button.setOnClickListener {
                 // Verificar si hay puntos para el día seleccionado
                 if (itinerary.isNotEmpty()) {
-                    // Abrir la ruta en Google Maps
-                    RoutePlanner().openRouteInGoogleMaps(
-                        this@ItinerariesActivity,
-                        userLocation,
-                        itinerary,
-                        "Caminando"
-                    )
+                    val intent = Intent(this@ItinerariesActivity, RoutePreviewActivity::class.java)
+                    intent.putParcelableArrayListExtra("route", ArrayList(itinerary))
+                    intent.putExtra("userLatitude", userLocation.latitude)
+                    intent.putExtra("userLongitude", userLocation.longitude)
+                    intent.putExtra("transportMode", transportType)
+                    startActivity(intent)
+
                 } else {
                     // Mostrar mensaje de error si no hay puntos para el día
                     Toast.makeText(
@@ -48,7 +54,7 @@ class ItinerariesActivity : AppCompatActivity() {
                     ).show()
                 }
             }
-            itinerariesLayout.addView(button) // Añadir el botón al layout
+            itinerariesLayout.addView(button)
         }
     }
 }
