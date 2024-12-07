@@ -255,64 +255,92 @@ class MonumentListActivity : AppCompatActivity() {
 
                 val timeNeeded = totalTimeForFavorites + totalTimeForFiltered
 
-                // LOG 2: Tiempo Total para Favoritos y Filtrados
-                Log.d("TestLogs", "Tiempo Necesario para Favoritos y Filtrados: $timeNeeded horas")
-
-                var remainingTime = selectedTime.toDouble() - timeNeeded
-
-                if (selectedTime > 8) {
-                    remainingTime -= 1.0
-                }
-
-                // Mostrar el cuadro de diálogo si hay tiempo extra después de visitar favoritos y filtrados
-                if (remainingTime >= 0.5 && filteredMonuments.isNotEmpty()) {
-                    Log.d("TestLogs", "Mostrando Cuadro de Diálogo. Tiempo Suficiente Detectado")
-
-                    val remainingMonuments = monumentList.filterNot {
-                        favoriteMonuments.contains(it) || filteredMonuments.contains(it)
-                    }.toMutableList()
-
-                    routePlanner.checkForExtraTimeAndShowDialog(
-                        context = this,
-                        currentTime = timeNeeded,
-                        selectedTime = selectedTime,
-                        remainingTime = remainingTime,
-                        availableTime = selectedTime.toDouble(),
-                        route = (favoriteMonuments + filteredMonuments).toMutableList(),
-                        remainingMonuments = remainingMonuments,
-                        visitType = visitType,
-                        transportType = transportType,
-                        currentLocation = userLocation!!,
-                        filteredMonuments = filteredMonuments,
-                        favoriteMonuments = favoriteMonuments
-                    )
+                if (timeNeeded > selectedTime.toDouble()) {
+                    Log.d("RoutePlanning", "Tiempo insuficiente, mostrando mensaje al usuario.")
+                    AlertDialog.Builder(this)
+                        .setTitle("Tiempo insuficiente")
+                        .setMessage("No es posible visitar todos los puntos seleccionados en el tiempo disponible. Se generará una ruta ajustada.")
+                        .setPositiveButton("Aceptar") { _, _ ->
+                            // Generar la ruta ajustada automáticamente
+                            val routes = routePlanner.generateRoute(
+                                allMonuments = filteredMonuments,
+                                favoriteMonuments = favoriteMonuments,
+                                selectedTime = selectedTime,
+                                visitType = visitType,
+                                transportType = transportType,
+                                userLocation = userLocation!!,
+                                filteredMonuments = filteredMonuments.toMutableList()
+                            )
+                                Log.d("TestLogs", "Generando Ruta Completa y Abriendo en Google Maps")
+                                val intent = Intent(this, RoutePreviewActivity::class.java)
+                                intent.putParcelableArrayListExtra("route", ArrayList(routes.first()))
+                                intent.putExtra("userLatitude", userLocation!!.latitude)
+                                intent.putExtra("userLongitude", userLocation!!.longitude)
+                                intent.putExtra("transportMode", transportType)
+                                startActivity(intent)
+                        }
+                        .setNegativeButton("Cancelar", null)
+                        .show()
                 } else {
-                    // Continuar con la generación completa de la ruta
-                    Log.d("TestLogs", "No se muestra el cuadro de diálogo porque el tiempo restante no es suficiente.")
-                    val routes = routePlanner.generateRoute(
-                        allMonuments = filteredMonuments,
-                        favoriteMonuments = favoriteMonuments,
-                        selectedTime = selectedTime,
-                        visitType = visitType,
-                        transportType = transportType,
-                        userLocation = userLocation!!,
-                        filteredMonuments = filteredMonuments.toMutableList()
-                    )
-                    if (routes.isNotEmpty()) {
-                        Log.d("TestLogs", "Generando Ruta Completa y Abriendo en Google Maps")
-                        val intent = Intent(this, RoutePreviewActivity::class.java)
-                        intent.putParcelableArrayListExtra("route", ArrayList(routes.first()))
-                        intent.putExtra("userLatitude", userLocation!!.latitude)
-                        intent.putExtra("userLongitude", userLocation!!.longitude)
-                        intent.putExtra("transportMode", transportType)
-                        startActivity(intent)
+                    Log.d("RoutePlanning", "Tiempo suficiente, se abrirá la ruta completa.")
+                    var remainingTime = selectedTime.toDouble() - timeNeeded
+                    Log.d("RoutePlanning", "Tiempo restante: $remainingTime")
 
+
+                    if (selectedTime > 8) {
+                        remainingTime -= 1.0
+                    }
+
+                    // Mostrar el cuadro de diálogo si hay tiempo extra después de visitar favoritos y filtrados
+                    if (remainingTime >= 0.5 && filteredMonuments.isNotEmpty()) {
+                        Log.d("TestLogs", "Mostrando Cuadro de Diálogo. Tiempo Suficiente Detectado")
+
+                        val remainingMonuments = monumentList.filterNot {
+                            favoriteMonuments.contains(it) || filteredMonuments.contains(it)
+                        }.toMutableList()
+
+                        routePlanner.checkForExtraTimeAndShowDialog(
+                            context = this,
+                            currentTime = timeNeeded,
+                            selectedTime = selectedTime,
+                            remainingTime = remainingTime,
+                            availableTime = selectedTime.toDouble(),
+                            route = (favoriteMonuments + filteredMonuments).toMutableList(),
+                            remainingMonuments = remainingMonuments,
+                            visitType = visitType,
+                            transportType = transportType,
+                            currentLocation = userLocation!!,
+                            filteredMonuments = filteredMonuments,
+                            favoriteMonuments = favoriteMonuments
+                        )
+                    } else {
+                        // Continuar con la generación completa de la ruta
+                        Log.d("TestLogs", "No se muestra el cuadro de diálogo porque el tiempo restante no es suficiente.")
+                        val routes = routePlanner.generateRoute(
+                            allMonuments = filteredMonuments,
+                            favoriteMonuments = favoriteMonuments,
+                            selectedTime = selectedTime,
+                            visitType = visitType,
+                            transportType = transportType,
+                            userLocation = userLocation!!,
+                            filteredMonuments = filteredMonuments.toMutableList()
+                        )
+                        if (routes.isNotEmpty()) {
+                            Log.d("TestLogs", "Generando Ruta Completa y Abriendo en Google Maps")
+                            val intent = Intent(this, RoutePreviewActivity::class.java)
+                            intent.putParcelableArrayListExtra("route", ArrayList(routes.first()))
+                            intent.putExtra("userLatitude", userLocation!!.latitude)
+                            intent.putExtra("userLongitude", userLocation!!.longitude)
+                            intent.putExtra("transportMode", transportType)
+                            startActivity(intent)
+
+                        }
                     }
                 }
-            }
 
-            // LOG 3: Fin de la Prueba
-            Log.d("TestLogs", "== FIN PRUEBA ==")
+
+
+            }
         }
     }
 
@@ -621,4 +649,18 @@ class MonumentListActivity : AppCompatActivity() {
             }
         }
     }
+    private fun openRoutePreviewActivity(route: List<Monument>, transportType: String) {
+        if (route.isEmpty()) {
+            Toast.makeText(this, "No hay puntos disponibles para la ruta seleccionada.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val intent = Intent(this, RoutePreviewActivity::class.java)
+        intent.putParcelableArrayListExtra("route", ArrayList(route))
+        intent.putExtra("userLatitude", userLocation?.latitude)
+        intent.putExtra("userLongitude", userLocation?.longitude)
+        intent.putExtra("transportMode", transportType)
+        startActivity(intent)
+    }
+
 }

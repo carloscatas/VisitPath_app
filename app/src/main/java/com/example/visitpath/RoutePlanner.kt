@@ -127,10 +127,6 @@ class RoutePlanner {
             }
         }
 
-        // Paso 3: Añadir puntos restantes
-
-
-
         // Devolver la ruta completa, envuelta en una lista de listas para cumplir con el tipo de retorno requerido
         return if (route.isNotEmpty()) {
             listOf(route)
@@ -149,69 +145,67 @@ class RoutePlanner {
         transportType: String,
         filteredMonuments: List<Monument>
     ): Triple<MutableList<Monument>, MutableList<Monument>, Double> {
-        val routes = generateRoute(
-            allMonuments = allMonuments,
-            favoriteMonuments = favoriteMonuments,
-            selectedTime = selectedTime,
-            visitType = visitType,
-            transportType = transportType,
-            userLocation = userLocation,
-            filteredMonuments = filteredMonuments.toMutableList()
-        )
-
-        if (routes.isEmpty()) {
-            return Triple(mutableListOf(), mutableListOf(), 0.0) // No se pudo generar ninguna ruta
-        }
-
-        val viableRoute = routes.first().toMutableList()
+        val route = mutableListOf<Monument>()
         var currentTime = 0.0
+        val visitDuration = if (visitType == "Tour rápido") 0.5 else 1.0 // Duración por punto
+        var currentLocation = userLocation
 
-        // Calcular el tiempo total de la ruta generada
-        for (i in 0 until viableRoute.size - 1) {
-            val monument = viableRoute[i]
-            val nextMonument = viableRoute[i + 1]
+        // Paso 1: Añadir favoritos
+        val remainingFavorites = favoriteMonuments.toMutableList()
+        while (remainingFavorites.isNotEmpty()) {
+            val nextFavorite = remainingFavorites.minByOrNull {
+                calculateDistance(currentLocation, GeoPoint(it.latitud, it.longitud))
+            }
 
-            val travelTime = calculateTravelTime(
-                getDistanceBetweenPoints(
-                    GeoPoint(monument.latitud, monument.longitud),
-                    GeoPoint(nextMonument.latitud, nextMonument.longitud)
-                ),
-                transportType
-            )
+            if (nextFavorite != null) {
+                val travelTime = calculateTravelTime(
+                    calculateDistance(currentLocation, GeoPoint(nextFavorite.latitud, nextFavorite.longitud)),
+                    transportType
+                )
+                val totalTime = travelTime + visitDuration
 
-            val visitTime = if (visitType == "Tour rápido") 0.5 else monument.duracionVisita
-            currentTime += travelTime + visitTime
+                if (currentTime + totalTime <= selectedTime) {
+                    route.add(nextFavorite)
+                    currentTime += totalTime
+                    currentLocation = GeoPoint(nextFavorite.latitud, nextFavorite.longitud)
+                    remainingFavorites.remove(nextFavorite)
+                } else {
+                    break // No hay tiempo suficiente para más favoritos
+                }
+            }
         }
 
-        // Añadir el tiempo de visita del último punto
-        if (viableRoute.isNotEmpty()) {
-            val lastMonument = viableRoute.last()
-            currentTime += if (visitType == "Tour rápido") 0.5 else lastMonument.duracionVisita
+        // Paso 2: Añadir puntos filtrados (no favoritos)
+        val remainingFiltered = filteredMonuments.filterNot { favoriteMonuments.contains(it) }.toMutableList()
+        while (remainingFiltered.isNotEmpty() && currentTime < selectedTime) {
+            val nextFiltered = remainingFiltered.minByOrNull {
+                calculateDistance(currentLocation, GeoPoint(it.latitud, it.longitud))
+            }
+
+            if (nextFiltered != null) {
+                val travelTime = calculateTravelTime(
+                    calculateDistance(currentLocation, GeoPoint(nextFiltered.latitud, nextFiltered.longitud)),
+                    transportType
+                )
+                val totalTime = travelTime + visitDuration
+
+                if (currentTime + totalTime <= selectedTime) {
+                    route.add(nextFiltered)
+                    currentTime += totalTime
+                    currentLocation = GeoPoint(nextFiltered.latitud, nextFiltered.longitud)
+                    remainingFiltered.remove(nextFiltered)
+                } else {
+                    break // No hay tiempo suficiente para más filtrados
+                }
+            }
         }
 
-        // logs para ver los monumentos en la ruta viable
-        Log.d("handleRouteGeneration", "Monumentos viables:")
-        viableRoute.forEach {
-            Log.d("handleRouteGeneration", "- ${it.nombre}, Latitud: ${it.latitud}, Longitud: ${it.longitud}")
-        }
+        // Paso 3: Obtener los monumentos restantes
+        val remainingMonuments = allMonuments.filterNot { route.contains(it) || favoriteMonuments.contains(it) }.toMutableList()
 
-        Log.d("handleRouteGeneration", "Todos los monumentos antes de filtrar:")
-        allMonuments.forEach {
-            Log.d("handleRouteGeneration", "- ${it.nombre}, Latitud: ${it.latitud}, Longitud: ${it.longitud}")
-        }
-
-        // Los "monumentos restantes" deben ser aquellos que no están en la ruta viable ni en los favoritos
-        val remainingMonuments = allMonuments.filterNot {
-            viableRoute.contains(it) || favoriteMonuments.contains(it)
-        }.toMutableList()
-
-        Log.d("handleRouteGeneration", "Monumentos restantes después de calcular:")
-        remainingMonuments.forEach {
-            Log.d("handleRouteGeneration", "- ${it.nombre}, Latitud: ${it.latitud}, Longitud: ${it.longitud}")
-        }
-
-        return Triple(viableRoute, remainingMonuments, currentTime)
+        return Triple(route.toMutableList(), remainingMonuments, currentTime)
     }
+
 
     fun checkForExtraTimeAndShowDialog(
         context: Context,
@@ -283,14 +277,13 @@ class RoutePlanner {
         var totalTime = 0.0
         var currentLocation = userLocation
         val visitDurationQuick = 0.5
-        val visitDurationNormal = 1.0
 
         monuments.forEach { monument ->
             val travelTime = calculateTravelTime(
                 calculateDistance(currentLocation, GeoPoint(monument.latitud, monument.longitud)),
                 transportType
             )
-            val visitTime = if (visitType == "Tour rápido") visitDurationQuick else visitDurationNormal
+            val visitTime = if (visitType == "Tour rápido") visitDurationQuick else monument.duracionVisita
             totalTime += travelTime + visitTime
             currentLocation = GeoPoint(monument.latitud, monument.longitud)
         }
@@ -386,8 +379,6 @@ class RoutePlanner {
             ).show()
         }
     }
-
-
 
     fun generateFinalRoute(
         favoriteMonuments: List<Monument>,
