@@ -81,10 +81,7 @@ class RoutePreviewActivity : AppCompatActivity() {
             // Llamar directamente a RoutePlanner para abrir Google Maps
             openRouteInGoogleMaps()
         }
-        returnButton = findViewById(R.id.returnButton)
-        returnButton.setOnClickListener {
-            finish() // Cierra la actividad actual y regresa
-        }
+
     }
 
     /**

@@ -13,4 +13,5 @@
     <color name="primaryTextColor">#000000</color> <!-- Color de texto negro -->
     <color name="primaryColor">#6200EE</color> <!-- Color morado o el que prefieras para el FAB -->
     <color name="primary">#6200EE</color>
+    <color name="light_gray">#D3D3D3</color>
 </resources>

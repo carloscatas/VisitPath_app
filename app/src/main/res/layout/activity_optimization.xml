@@ -6,6 +6,19 @@
     android:orientation="vertical"
     android:padding="16dp">
 
+    <!-- Mensaje explicativo -->
+    <TextView
+        android:id="@+id/titleTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Elimina los puntos de interés que no quieras incluir en tu ruta optimizada."
+        android:textSize="18sp"
+        android:textColor="@color/black"
+        android:gravity="center"
+        android:padding="8dp"
+        android:background="@color/light_gray"
+        android:layout_marginBottom="8dp" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
