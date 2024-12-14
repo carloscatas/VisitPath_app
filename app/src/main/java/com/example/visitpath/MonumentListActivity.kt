@@ -271,13 +271,28 @@ class MonumentListActivity : AppCompatActivity() {
                                 userLocation = userLocation!!,
                                 filteredMonuments = filteredMonuments.toMutableList()
                             )
-                                Log.d("TestLogs", "Generando Ruta Completa y Abriendo en Google Maps")
+                            if (routes.isNotEmpty()) {
+                                Log.d(
+                                    "TestLogs",
+                                    "Generando Ruta Completa y Abriendo en Google Maps"
+                                )
                                 val intent = Intent(this, RoutePreviewActivity::class.java)
-                                intent.putParcelableArrayListExtra("route", ArrayList(routes.first()))
+                                intent.putParcelableArrayListExtra(
+                                    "route",
+                                    ArrayList(routes.first())
+                                )
                                 intent.putExtra("userLatitude", userLocation!!.latitude)
                                 intent.putExtra("userLongitude", userLocation!!.longitude)
                                 intent.putExtra("transportMode", transportType)
                                 startActivity(intent)
+                            } else {
+                                // Mostrar un mensaje si no se puede generar una ruta ajustada
+                                Toast.makeText(
+                                    this,
+                                    "No se pudo generar una ruta ajustada con los puntos seleccionados.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
                         }
                         .setNegativeButton("Cancelar", null)
                         .show()
