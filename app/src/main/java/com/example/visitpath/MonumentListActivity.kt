@@ -50,6 +50,8 @@ class MonumentListActivity : AppCompatActivity() {
     private var selectedTransportType: String? = null
     private var userLocation: GeoPoint? = null
     private lateinit var sharedPreferences: SharedPreferences
+    private var isTutorialInProgress = false
+    private var currentTutorialStep = TUTORIAL_STEP_NONE
 
     // Variables para almacenar los filtros seleccionados
     private val selectedCategories = mutableListOf<String>()
@@ -62,6 +64,14 @@ class MonumentListActivity : AppCompatActivity() {
     private var availableTime: Int = 0 // Tiempo disponible en horas o días
     private var tourType: String = "Tour completo" // Tipo de tour: "Tour rápido" o "Tour completo"
     private var transportType: String = "Caminando" // Transporte: "Privado", "Público", "Caminando"
+
+    companion object {
+        const val TUTORIAL_STEP_NONE = 0
+        const val TUTORIAL_STEP_FILTER = 1
+        const val TUTORIAL_STEP_MONUMENT_STAR = 2
+        const val TUTORIAL_STEP_FAVORITES = 3
+        const val TUTORIAL_STEP_ROUTE = 4
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         window.enterTransition = Fade()
@@ -77,10 +87,11 @@ class MonumentListActivity : AppCompatActivity() {
 
         // Verificar si el tutorial debe mostrarse
         val showTutorial = sharedPreferences.getBoolean("showTutorial", false)
-        Log.d("TutorialCheck", "Valor de showTutorial: $showTutorial")
-        if (showTutorial==false) {
-            Log.d("TutorialCheck", "Se muestra el cuadro de diálogo del tutorial.")
+        if (!showTutorial) {
             showTutorialDialog()
+
+        } else {
+            startTutorialSequence() // Reanudar el tutorial desde el progreso guardado
         }
 
 
@@ -151,6 +162,7 @@ class MonumentListActivity : AppCompatActivity() {
         val filterText: TextView = findViewById(R.id.filterText)
 
         val openFilterDialog = {
+            saveTutorialStep(TUTORIAL_STEP_FILTER)
             showFilterDialog()
         }
 
@@ -497,16 +509,31 @@ class MonumentListActivity : AppCompatActivity() {
 
             applyFilters()
             dialog.dismiss()
+            if (isTutorialInProgress && loadTutorialStep() == TUTORIAL_STEP_FILTER) {
+                showMonumentStarPrompt() // Continúa con el tutorial
+            }
         }
 
         // Configurar el botón de reestablecer
         filterDialog.setNeutralButton("Reestablecer") { dialog, _ ->
             resetFilters()
             dialog.dismiss()
+            if (isTutorialInProgress && loadTutorialStep() == TUTORIAL_STEP_FILTER) {
+                showMonumentStarPrompt()
+            }
         }
 
-        filterDialog.show()
+        // Capturar el evento de cierre del diálogo (gesto de regresar o tocar fuera)
+        val dialog = filterDialog.create()
+        dialog.setOnDismissListener {
+            if (isTutorialInProgress && loadTutorialStep() == TUTORIAL_STEP_FILTER) {
+                showMonumentStarPrompt() // Continúa el tutorial al cerrar el diálogo
+            }
+        }
+
+        dialog.show()
     }
+
 
     private fun applyFilters() {
         // Verificar si ningún filtro está seleccionado
@@ -694,8 +721,22 @@ class MonumentListActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
+    override fun onResume() {
+        super.onResume()
+
+        if (isTutorialInProgress) {
+            val currentStep = loadTutorialStep()
+            when (currentStep) {
+                TUTORIAL_STEP_FILTER -> showMonumentStarPrompt()
+                TUTORIAL_STEP_MONUMENT_STAR -> showFavoritesPrompt()
+                TUTORIAL_STEP_FAVORITES -> showRoutePrompt()
+            }
+        }
+    }
+
+
+
     private fun showTutorialDialog() {
-        Log.d("TutorialDialog", "Entrando en showTutorialDialog.")
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_tutorial, null)
         val checkBox = dialogView.findViewById<CheckBox>(R.id.doNotShowAgainCheckBox)
 
@@ -704,39 +745,44 @@ class MonumentListActivity : AppCompatActivity() {
             .setMessage("¿Quieres acceder al tutorial para conocer las funciones principales?")
             .setView(dialogView)
             .setPositiveButton("Sí") { _, _ ->
-                Log.d("TutorialDialog", "Se pulsó el botón 'Sí'.")
-                if (checkBox.isChecked==true) {
-                    Log.d("TutorialDialog", "Checkbox 'No volver a mostrar' está marcado.")
+                if (checkBox.isChecked) {
                     sharedPreferences.edit().putBoolean("showTutorial", true).apply()
-                    Log.d("TutorialDialog", "showTutorial actualizado a true en SharedPreferences.")
                 }
+                resetTutorialStep()
                 startTutorialSequence()
             }
             .setNegativeButton("No") { _, _ ->
-                Log.d("TutorialDialog", "Se pulsó el botón 'No'.")
-                if (checkBox.isChecked==true) {
-                    Log.d("TutorialDialog", "Checkbox 'No volver a mostrar' está marcado.")
+                if (checkBox.isChecked) {
                     sharedPreferences.edit().putBoolean("showTutorial", true).apply()
-                    Log.d("TutorialDialog", "showTutorial actualizado a false en SharedPreferences.")
                 }
             }
             .setCancelable(false)
             .show()
     }
 
-
-
     private fun startTutorialSequence() {
-        showFilterPrompt()
+        isTutorialInProgress = true
+
+        when (loadTutorialStep()) {
+            TUTORIAL_STEP_NONE -> showFilterPrompt()
+            TUTORIAL_STEP_FILTER -> showMonumentStarPrompt()
+            TUTORIAL_STEP_MONUMENT_STAR -> showFavoritesPrompt()
+            TUTORIAL_STEP_FAVORITES -> showRoutePrompt()
+            TUTORIAL_STEP_ROUTE -> markTutorialCompleted()
+        }
     }
 
     private fun showFilterPrompt() {
+        if (currentTutorialStep == TUTORIAL_STEP_FILTER) return
+        currentTutorialStep = TUTORIAL_STEP_FILTER
+
         MaterialTapTargetPrompt.Builder(this)
             .setTarget(findViewById<ImageButton>(R.id.filterButton)) // Botón de filtros
             .setPrimaryText("Pulse aquí para añadir filtros")
             .setSecondaryText("Puede filtrar los monumentos según sus preferencias.")
             .setPromptStateChangeListener { _, state ->
                 if (state == MaterialTapTargetPrompt.STATE_DISMISSED) {
+                    saveTutorialStep(TUTORIAL_STEP_FILTER)
                     showMonumentStarPrompt()
                 }
             }
@@ -744,7 +790,8 @@ class MonumentListActivity : AppCompatActivity() {
     }
 
     private fun showMonumentStarPrompt() {
-        // Botón estrella dentro del globo de un monumento
+        if (currentTutorialStep == TUTORIAL_STEP_MONUMENT_STAR) return
+        currentTutorialStep = TUTORIAL_STEP_MONUMENT_STAR
         val monumentStarView = findViewById<View>(R.id.actionIcon) // Reemplaza con el ID correcto
         MaterialTapTargetPrompt.Builder(this)
             .setTarget(monumentStarView)
@@ -752,20 +799,36 @@ class MonumentListActivity : AppCompatActivity() {
             .setSecondaryText("Pulse esta estrella para añadir el monumento a su lista de favoritos.")
             .setPromptStateChangeListener { _, state ->
                 if (state == MaterialTapTargetPrompt.STATE_DISMISSED) {
+                    saveTutorialStep(TUTORIAL_STEP_MONUMENT_STAR)
                     showFavoritesPrompt()
                 }
             }
             .show()
+
+        // Interceptar el clic en la estrella durante el tutorial
+        monumentStarView.setOnClickListener {
+            if (isTutorialInProgress && currentTutorialStep == TUTORIAL_STEP_MONUMENT_STAR) {
+                // Continuar con el tutorial
+                saveTutorialStep(TUTORIAL_STEP_MONUMENT_STAR)
+                showFavoritesPrompt()
+            } else {
+                // Si no estamos en el tutorial, proceder con la funcionalidad normal
+                monumentStarView.performClick()
+            }
+        }
     }
 
     private fun showFavoritesPrompt() {
-        // Botón de la estrella general de favoritos
+        saveTutorialStep(TUTORIAL_STEP_FAVORITES) // Guardar estado del tutorial
+        if (currentTutorialStep == TUTORIAL_STEP_FAVORITES) return
+        currentTutorialStep = TUTORIAL_STEP_FAVORITES
         MaterialTapTargetPrompt.Builder(this)
             .setTarget(findViewById<FloatingActionButton>(R.id.openFavoritesButton))
             .setPrimaryText("Pulse aquí para ver sus favoritos")
             .setSecondaryText("Acceda a la lista de sus monumentos favoritos.")
             .setPromptStateChangeListener { _, state ->
                 if (state == MaterialTapTargetPrompt.STATE_DISMISSED) {
+                    saveTutorialStep(TUTORIAL_STEP_FAVORITES)
                     showRoutePrompt()
                 }
             }
@@ -773,21 +836,42 @@ class MonumentListActivity : AppCompatActivity() {
     }
 
     private fun showRoutePrompt() {
-        // Botón de generar ruta
+        saveTutorialStep(TUTORIAL_STEP_ROUTE)
+        if (currentTutorialStep == TUTORIAL_STEP_ROUTE) return
+        currentTutorialStep = TUTORIAL_STEP_ROUTE
         MaterialTapTargetPrompt.Builder(this)
             .setTarget(findViewById<FloatingActionButton>(R.id.fab_create_route))
             .setPrimaryText("Pulse aquí para generar ruta")
             .setSecondaryText("Cree una ruta personalizada según sus preferencias.")
             .setPromptStateChangeListener { _, state ->
                 if (state == MaterialTapTargetPrompt.STATE_DISMISSED) {
+                    saveTutorialStep(TUTORIAL_STEP_ROUTE)
                     markTutorialCompleted()
                 }
             }
             .show()
     }
 
-    private fun markTutorialCompleted() {
-        // Guardar en SharedPreferences que el tutorial ya fue completado
-        sharedPreferences.edit().putBoolean("isFirstLaunch", false).apply()
+    private fun saveTutorialStep(step: Int) {
+        sharedPreferences.edit().putInt("tutorialStep", step).apply()
     }
+
+    private fun loadTutorialStep(): Int {
+        return sharedPreferences.getInt("tutorialStep", TUTORIAL_STEP_NONE)
+    }
+
+    private fun resetTutorialStep() {
+        sharedPreferences.edit().putInt("tutorialStep", TUTORIAL_STEP_NONE).apply()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        resetTutorialStep() // Reinicia el progreso al cerrar la app
+    }
+
+    private fun markTutorialCompleted() {
+        isTutorialInProgress = false
+        resetTutorialStep()
+    }
+
 }
