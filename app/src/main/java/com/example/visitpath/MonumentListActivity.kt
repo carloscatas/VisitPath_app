@@ -1,7 +1,9 @@
 package com.example.visitpath
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.location.Geocoder
 import android.os.Bundle
@@ -29,8 +31,10 @@ import com.google.android.libraries.places.api.Places
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
+import uk.co.samuelwall.materialtaptargetprompt.MaterialTapTargetPrompt
 import java.io.Serializable
 import java.util.Locale
+
 
 class MonumentListActivity : AppCompatActivity() {
 
@@ -45,6 +49,7 @@ class MonumentListActivity : AppCompatActivity() {
     private var selectedRadius: Int = 0
     private var selectedTransportType: String? = null
     private var userLocation: GeoPoint? = null
+    private lateinit var sharedPreferences: SharedPreferences
 
     // Variables para almacenar los filtros seleccionados
     private val selectedCategories = mutableListOf<String>()
@@ -64,9 +69,20 @@ class MonumentListActivity : AppCompatActivity() {
         setContentView(R.layout.activity_monument_list)
         emptyStateView = findViewById(R.id.emptyStateView)
 
-
         // Inicializar Google Places
         Places.initialize(applicationContext, "AIzaSyBRqF8SOEk36xfS8HWiFE5AJ2aIopQhTnE")
+
+        // Inicializar SharedPreferences
+        sharedPreferences = getSharedPreferences("VisitPathPrefs", Context.MODE_PRIVATE)
+
+        // Verificar si el tutorial debe mostrarse
+        val showTutorial = sharedPreferences.getBoolean("showTutorial", false)
+        Log.d("TutorialCheck", "Valor de showTutorial: $showTutorial")
+        if (showTutorial==false) {
+            Log.d("TutorialCheck", "Se muestra el cuadro de diálogo del tutorial.")
+            showTutorialDialog()
+        }
+
 
         // Configuramos el RecyclerView y el adapter
         recyclerView = findViewById(R.id.recyclerView)
@@ -678,4 +694,100 @@ class MonumentListActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
+    private fun showTutorialDialog() {
+        Log.d("TutorialDialog", "Entrando en showTutorialDialog.")
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_tutorial, null)
+        val checkBox = dialogView.findViewById<CheckBox>(R.id.doNotShowAgainCheckBox)
+
+        AlertDialog.Builder(this)
+            .setTitle("Tutorial")
+            .setMessage("¿Quieres acceder al tutorial para conocer las funciones principales?")
+            .setView(dialogView)
+            .setPositiveButton("Sí") { _, _ ->
+                Log.d("TutorialDialog", "Se pulsó el botón 'Sí'.")
+                if (checkBox.isChecked==true) {
+                    Log.d("TutorialDialog", "Checkbox 'No volver a mostrar' está marcado.")
+                    sharedPreferences.edit().putBoolean("showTutorial", true).apply()
+                    Log.d("TutorialDialog", "showTutorial actualizado a true en SharedPreferences.")
+                }
+                startTutorialSequence()
+            }
+            .setNegativeButton("No") { _, _ ->
+                Log.d("TutorialDialog", "Se pulsó el botón 'No'.")
+                if (checkBox.isChecked==true) {
+                    Log.d("TutorialDialog", "Checkbox 'No volver a mostrar' está marcado.")
+                    sharedPreferences.edit().putBoolean("showTutorial", true).apply()
+                    Log.d("TutorialDialog", "showTutorial actualizado a false en SharedPreferences.")
+                }
+            }
+            .setCancelable(false)
+            .show()
+    }
+
+
+
+    private fun startTutorialSequence() {
+        showFilterPrompt()
+    }
+
+    private fun showFilterPrompt() {
+        MaterialTapTargetPrompt.Builder(this)
+            .setTarget(findViewById<ImageButton>(R.id.filterButton)) // Botón de filtros
+            .setPrimaryText("Pulse aquí para añadir filtros")
+            .setSecondaryText("Puede filtrar los monumentos según sus preferencias.")
+            .setPromptStateChangeListener { _, state ->
+                if (state == MaterialTapTargetPrompt.STATE_DISMISSED) {
+                    showMonumentStarPrompt()
+                }
+            }
+            .show()
+    }
+
+    private fun showMonumentStarPrompt() {
+        // Botón estrella dentro del globo de un monumento
+        val monumentStarView = findViewById<View>(R.id.actionIcon) // Reemplaza con el ID correcto
+        MaterialTapTargetPrompt.Builder(this)
+            .setTarget(monumentStarView)
+            .setPrimaryText("Marque el monumento como favorito")
+            .setSecondaryText("Pulse esta estrella para añadir el monumento a su lista de favoritos.")
+            .setPromptStateChangeListener { _, state ->
+                if (state == MaterialTapTargetPrompt.STATE_DISMISSED) {
+                    showFavoritesPrompt()
+                }
+            }
+            .show()
+    }
+
+    private fun showFavoritesPrompt() {
+        // Botón de la estrella general de favoritos
+        MaterialTapTargetPrompt.Builder(this)
+            .setTarget(findViewById<FloatingActionButton>(R.id.openFavoritesButton))
+            .setPrimaryText("Pulse aquí para ver sus favoritos")
+            .setSecondaryText("Acceda a la lista de sus monumentos favoritos.")
+            .setPromptStateChangeListener { _, state ->
+                if (state == MaterialTapTargetPrompt.STATE_DISMISSED) {
+                    showRoutePrompt()
+                }
+            }
+            .show()
+    }
+
+    private fun showRoutePrompt() {
+        // Botón de generar ruta
+        MaterialTapTargetPrompt.Builder(this)
+            .setTarget(findViewById<FloatingActionButton>(R.id.fab_create_route))
+            .setPrimaryText("Pulse aquí para generar ruta")
+            .setSecondaryText("Cree una ruta personalizada según sus preferencias.")
+            .setPromptStateChangeListener { _, state ->
+                if (state == MaterialTapTargetPrompt.STATE_DISMISSED) {
+                    markTutorialCompleted()
+                }
+            }
+            .show()
+    }
+
+    private fun markTutorialCompleted() {
+        // Guardar en SharedPreferences que el tutorial ya fue completado
+        sharedPreferences.edit().putBoolean("isFirstLaunch", false).apply()
+    }
 }
