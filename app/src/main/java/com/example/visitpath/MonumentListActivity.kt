@@ -14,7 +14,6 @@ import android.view.View
 import android.widget.CheckBox
 import android.widget.ImageButton
 import android.widget.RelativeLayout
-import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -398,187 +397,99 @@ class MonumentListActivity : AppCompatActivity() {
         val dialogLayout = inflater.inflate(R.layout.dialog_filter_options, null)
         filterDialog.setView(dialogLayout)
 
-        // Configuración del radio de actuación
-        val radiusSeekBar = dialogLayout.findViewById<SeekBar>(R.id.radiusSeekBar)
-        val radiusTextView = dialogLayout.findViewById<TextView>(R.id.radiusTextView)
-
-        radiusSeekBar.progress = selectedRadius
-        radiusTextView.text = "$selectedRadius km"
-
-        radiusSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                selectedRadius = progress
-                radiusTextView.text = "$progress km"
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        })
-
-        // Configuración de categorías
-        val categoryCheckboxes = listOf(
-            dialogLayout.findViewById<CheckBox>(R.id.checkbox_natural_parks),
-            dialogLayout.findViewById<CheckBox>(R.id.checkbox_museums),
-            dialogLayout.findViewById<CheckBox>(R.id.checkbox_historic_monuments),
-            dialogLayout.findViewById<CheckBox>(R.id.checkbox_religious_monuments),
-            dialogLayout.findViewById<CheckBox>(R.id.checkbox_modern_architecture),
-            dialogLayout.findViewById<CheckBox>(R.id.checkbox_cultural_attractions),
-            dialogLayout.findViewById<CheckBox>(R.id.checkbox_urban_zones),
-            dialogLayout.findViewById<CheckBox>(R.id.checkbox_natural_landscapes)
-        )
-
-        val categories = listOf(
-            "Parques Naturales y Reservas",
-            "Museos y Galerías de Arte",
-            "Monumentos Históricos",
-            "Monumentos Religiosos",
-            "Edificios y Arquitectura Moderna",
-            "Atracciones Culturales",
-            "Zonas Urbanas y Barrios Históricos",
-            "Paisajes Naturales"
-        )
-
-        // Actualizar el estado de los checkboxes de categorías según los filtros seleccionados
-        for (i in categoryCheckboxes.indices) {
-            categoryCheckboxes[i].isChecked = selectedCategories.contains(categories[i])
-        }
-
-        // Configuración de duración
-        val durationCheckboxes = listOf(
-            dialogLayout.findViewById<CheckBox>(R.id.checkbox_duration_less_1),
-            dialogLayout.findViewById<CheckBox>(R.id.checkbox_duration_1_2),
-            dialogLayout.findViewById<CheckBox>(R.id.checkbox_duration_2_4),
-            dialogLayout.findViewById<CheckBox>(R.id.checkbox_duration_more_4)
-        )
-
-        val durations = listOf("Menos de 1h", "Entre 1 y 2h", "Entre 2 y 4h", "Más de 4h")
-        for (i in durationCheckboxes.indices) {
-            durationCheckboxes[i].isChecked = selectedDurations.contains(durations[i])
-        }
-
-        // Configuración de accesibilidad, entrada y audioguía
         val checkBoxAccessibilityYes = dialogLayout.findViewById<CheckBox>(R.id.checkbox_accessibility_yes)
         val checkBoxAccessibilityNo = dialogLayout.findViewById<CheckBox>(R.id.checkbox_accessibility_no)
-        val checkBoxEntryFree = dialogLayout.findViewById<CheckBox>(R.id.checkbox_entry_free)
-        val checkBoxEntryPaid = dialogLayout.findViewById<CheckBox>(R.id.checkbox_entry_paid)
         val checkBoxAudioYes = dialogLayout.findViewById<CheckBox>(R.id.checkbox_audio_yes)
         val checkBoxAudioNo = dialogLayout.findViewById<CheckBox>(R.id.checkbox_audio_no)
 
-        // Actualizar el estado de los checkboxes según los filtros seleccionados
-        checkBoxAccessibilityYes.isChecked = selectedAccessibility == "Sí"
-        checkBoxAccessibilityNo.isChecked = selectedAccessibility == "No"
-        checkBoxEntryFree.isChecked = selectedEntry == "Gratuita"
-        checkBoxEntryPaid.isChecked = selectedEntry == "De pago"
-        checkBoxAudioYes.isChecked = selectedAudioGuide == "Sí"
-        checkBoxAudioNo.isChecked = selectedAudioGuide == "No"
+        // Restaurar selecciones previas
+        checkBoxAccessibilityYes.isChecked = selectedAccessibilityOptions.contains("Sí")
+        checkBoxAccessibilityNo.isChecked = selectedAccessibilityOptions.contains("No")
+        checkBoxAudioYes.isChecked = selectedAudioGuideOptions.contains("Sí")
+        checkBoxAudioNo.isChecked = selectedAudioGuideOptions.contains("No")
 
-        // Configurar el botón de aplicar
         filterDialog.setPositiveButton("Aplicar") { dialog, _ ->
-            // Guardar los valores seleccionados en los filtros
-            selectedCategories.clear()
-            for (i in categoryCheckboxes.indices) {
-                if (categoryCheckboxes[i].isChecked) {
-                    selectedCategories.add(categories[i])
-                }
-            }
+            selectedAccessibilityOptions.clear()
+            selectedAudioGuideOptions.clear()
 
-            selectedDurations.clear()
-            for (i in durationCheckboxes.indices) {
-                if (durationCheckboxes[i].isChecked) {
-                    selectedDurations.add(durations[i])
-                }
+            if (checkBoxAccessibilityYes.isChecked) {
+                selectedAccessibilityOptions.add("Sí")
             }
-
-            selectedAccessibility = when {
-                checkBoxAccessibilityYes.isChecked -> "Sí"
-                checkBoxAccessibilityNo.isChecked -> "No"
-                else -> null
+            if (checkBoxAccessibilityNo.isChecked) {
+                selectedAccessibilityOptions.add("No")
             }
-
-            selectedEntry = when {
-                checkBoxEntryFree.isChecked -> "Gratuita"
-                checkBoxEntryPaid.isChecked -> "De pago"
-                else -> null
+            if (checkBoxAudioYes.isChecked) {
+                selectedAudioGuideOptions.add("Sí")
             }
-
-            selectedAudioGuide = when {
-                checkBoxAudioYes.isChecked -> "Sí"
-                checkBoxAudioNo.isChecked -> "No"
-                else -> null
+            if (checkBoxAudioNo.isChecked) {
+                selectedAudioGuideOptions.add("No")
             }
 
             applyFilters()
             dialog.dismiss()
-            if (isTutorialInProgress && loadTutorialStep() == TUTORIAL_STEP_FILTER) {
-                showMonumentStarPrompt() // Continúa con el tutorial
-            }
         }
 
-        // Configurar el botón de reestablecer
         filterDialog.setNeutralButton("Reestablecer") { dialog, _ ->
             resetFilters()
             dialog.dismiss()
-            if (isTutorialInProgress && loadTutorialStep() == TUTORIAL_STEP_FILTER) {
-                showMonumentStarPrompt()
-            }
         }
 
-        // Capturar el evento de cierre del diálogo (gesto de regresar o tocar fuera)
-        val dialog = filterDialog.create()
-        dialog.setOnDismissListener {
-            if (isTutorialInProgress && loadTutorialStep() == TUTORIAL_STEP_FILTER) {
-                showMonumentStarPrompt() // Continúa el tutorial al cerrar el diálogo
-            }
-        }
-
-        dialog.show()
+        filterDialog.show()
     }
 
 
+
+    private val selectedAccessibilityOptions = mutableSetOf<String>()
+    private val selectedAudioGuideOptions = mutableSetOf<String>()
+
     private fun applyFilters() {
-        // Verificar si ningún filtro está seleccionado
         val noFiltersSelected = selectedCategories.isEmpty() &&
                 selectedDurations.isEmpty() &&
                 selectedEntry == null &&
-                selectedAccessibility == null &&
-                selectedAudioGuide == null &&
+                selectedAccessibilityOptions.isEmpty() &&
+                selectedAudioGuideOptions.isEmpty() &&
                 selectedRadius == 0
 
-        // Aplicar filtros a todos los monumentos, incluidos los favoritos
         val filteredMonuments = if (noFiltersSelected) {
             monumentList
         } else {
             monumentList.filter { monument ->
-                // Lógica de filtros (categorías, duración, accesibilidad, etc.)
                 val matchesCategory = selectedCategories.isEmpty() || selectedCategories.contains(monument.categoria)
                 val matchesDuration = selectedDurations.isEmpty() ||
                         (selectedDurations.contains("Menos de 1h") && monument.duracionVisita < 1) ||
                         (selectedDurations.contains("Entre 1 y 2h") && monument.duracionVisita in 1.0..2.0) ||
                         (selectedDurations.contains("Entre 2 y 4h") && monument.duracionVisita in 2.0..4.0) ||
                         (selectedDurations.contains("Más de 4h") && monument.duracionVisita > 4)
-                val matchesEntry = selectedEntry == null || (selectedEntry == "Gratuita" && monument.costoEntrada) || (selectedEntry == "De pago" && !monument.costoEntrada)
-                val matchesAccessibility = selectedAccessibility == null || (selectedAccessibility == "Sí" && monument.movilidadReducida) || (selectedAccessibility == "No" && !monument.movilidadReducida)
-                val matchesAudioGuide = selectedAudioGuide == null || (selectedAudioGuide == "Sí" && monument.audioURL.isNotEmpty()) || (selectedAudioGuide == "No" && monument.audioURL.isEmpty())
+                val matchesEntry = selectedEntry == null ||
+                        (selectedEntry == "Gratuita" && monument.costoEntrada) ||
+                        (selectedEntry == "De pago" && !monument.costoEntrada)
+
+                val matchesAccessibility = selectedAccessibilityOptions.isEmpty() ||
+                        (selectedAccessibilityOptions.contains("Sí") && monument.movilidadReducida) ||
+                        (selectedAccessibilityOptions.contains("No") && !monument.movilidadReducida)
+
+                val matchesAudioGuide = selectedAudioGuideOptions.isEmpty() ||
+                        (selectedAudioGuideOptions.contains("Sí") && monument.audioURL.isNotEmpty()) ||
+                        (selectedAudioGuideOptions.contains("No") && monument.audioURL.isEmpty())
+
                 val matchesRadius = if (selectedRadius > 0) {
                     val distance = userLocation?.let { calculateDistance(it, GeoPoint(monument.latitud, monument.longitud)) }
                     distance != null && distance <= selectedRadius
                 } else {
-                    true // Ignora el filtro de radio si selectedRadius es 0
+                    true
                 }
+
                 matchesCategory && matchesDuration && matchesEntry && matchesAccessibility && matchesAudioGuide && matchesRadius
             }.toMutableList()
         }
 
-        // Ordenar los monumentos filtrados por cercanía al usuario
         val sortedMonuments = filteredMonuments.sortedBy {
             calculateDistance(userLocation!!, GeoPoint(it.latitud, it.longitud))
         }
 
-        // Actualizar el adaptador con los monumentos filtrados y ordenados
         this.filteredMonuments = sortedMonuments.toMutableList()
         monumentAdapter.updateData(this.filteredMonuments)
 
-        // Mostrar estado vacío si no hay resultados
         if (filteredMonuments.isEmpty()) {
             recyclerView.visibility = View.GONE
             emptyStateView.visibility = View.VISIBLE
@@ -589,20 +500,20 @@ class MonumentListActivity : AppCompatActivity() {
     }
 
 
+
     private fun resetFilters() {
-        // Restablecer todas las opciones de filtro
         selectedCategories.clear()
         selectedDurations.clear()
         selectedEntry = null
-        selectedAccessibility = null
-        selectedAudioGuide = null
+        selectedAccessibilityOptions.clear()
+        selectedAudioGuideOptions.clear()
         selectedRadius = 0
         selectedTransportType = null
 
-        // Mostrar todos los monumentos sin filtros
         filteredMonuments = monumentList
         monumentAdapter.updateData(filteredMonuments)
     }
+
 
     private fun requestLocationPermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
