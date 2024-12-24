@@ -15,7 +15,6 @@ class ItinerariesActivity : AppCompatActivity() {
     private var userLocation: GeoPoint = GeoPoint(0.0, 0.0)
     private var transportType: String = "Caminando"
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.itineraries_activity)
@@ -38,11 +37,11 @@ class ItinerariesActivity : AppCompatActivity() {
             val button = Button(this) // Crear un nuevo botón
             button.text = "Día ${index + 1}"
 
-            // Establecer estilo del botón
+            // Aplicar estilo personalizado con bordes redondeados
             button.setBackgroundResource(R.drawable.rounded_button)
             button.setTextColor(ContextCompat.getColor(this, R.color.white)) // Texto blanco
-            button.textSize = 16f
-            button.setAllCaps(false)
+            button.textSize = 16f // Tamaño del texto
+            button.setAllCaps(false) // Desactivar texto en mayúsculas
 
             // Configurar márgenes del botón
             val params = LinearLayout.LayoutParams(
@@ -52,7 +51,7 @@ class ItinerariesActivity : AppCompatActivity() {
             params.setMargins(16, 16, 16, 16) // Márgenes entre botones
             button.layoutParams = params
 
-
+            // Establecer acción al hacer clic
             button.setOnClickListener {
                 // Verificar si hay puntos para el día seleccionado
                 if (itinerary.isNotEmpty()) {
@@ -62,7 +61,6 @@ class ItinerariesActivity : AppCompatActivity() {
                     intent.putExtra("userLongitude", userLocation.longitude)
                     intent.putExtra("transportMode", transportType)
                     startActivity(intent)
-
                 } else {
                     // Mostrar mensaje de error si no hay puntos para el día
                     Toast.makeText(
@@ -72,6 +70,7 @@ class ItinerariesActivity : AppCompatActivity() {
                     ).show()
                 }
             }
+
             itinerariesLayout.addView(button)
         }
     }

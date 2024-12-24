@@ -1,6 +1,5 @@
 package com.example.visitpath
 
-import android.util.Log
 import com.google.firebase.firestore.GeoPoint
 
 class ItineraryManager {
@@ -14,101 +13,77 @@ class ItineraryManager {
         transportType: String,
         filteredMonuments: List<Monument>
     ): List<List<Monument>> {
-        val hoursPerDay = 10 // Tiempo máximo disponible por día
+        val hoursPerDay = 10.0 // Tiempo máximo disponible por día
         val dailyRoutes = mutableListOf<List<Monument>>()
-        val remainingFavorites = favoriteMonuments.toMutableList()
-        val remainingFiltered = filteredMonuments.toMutableList()
-        var remainingMonuments = allMonuments.filterNot { it in favoriteMonuments || it in filteredMonuments }.toMutableList()
 
-        Log.d("ItineraryManager", "Inicialización: Total favoritos: ${remainingFavorites.size}, Filtrados: ${remainingFiltered.size}, Restantes: ${remainingMonuments.size}")
+        // Eliminar duplicados entre las listas
+        val uniqueFavorites = favoriteMonuments.distinctBy { Pair(it.latitud, it.longitud) }.toMutableList()
+        val uniqueFiltered = filteredMonuments.distinctBy { Pair(it.latitud, it.longitud) }
+            .filterNot { filtered -> uniqueFavorites.any { it.latitud == filtered.latitud && it.longitud == filtered.longitud } }
+            .toMutableList()
+        val uniqueMonuments = allMonuments.distinctBy { Pair(it.latitud, it.longitud) }
+            .filterNot { monument ->
+                uniqueFavorites.any { it.latitud == monument.latitud && it.longitud == monument.longitud } ||
+                        uniqueFiltered.any { it.latitud == monument.latitud && it.longitud == monument.longitud }
+            }
+            .toMutableList()
 
         for (day in 1..totalDays) {
-            Log.d("ItineraryManager", "Día $day: Comenzando cálculo de ruta. Monumentos restantes: ${remainingMonuments.size}")
-
             val dailyRoute = mutableListOf<Monument>()
             var currentTime = 0.0
             var currentLocation = userLocation
 
-            // Priorizar favoritos
-            while (remainingFavorites.isNotEmpty() && currentTime < hoursPerDay && dailyRoute.size < 10) {
-                val nextFavorite = remainingFavorites.minByOrNull {
-                    calculateDistance(currentLocation, GeoPoint(it.latitud, it.longitud))
-                }
-                if (nextFavorite != null) {
-                    val travelTime = calculateTravelTime(
-                        calculateDistance(currentLocation, GeoPoint(nextFavorite.latitud, nextFavorite.longitud)),
-                        transportType
-                    )
-                    val visitTime = if (visitType == "Tour rápido") 0.5 else nextFavorite.duracionVisita
-                    if (currentTime + travelTime + visitTime <= hoursPerDay) {
-                        dailyRoute.add(nextFavorite)
-                        currentTime += travelTime + visitTime
-                        currentLocation = GeoPoint(nextFavorite.latitud, nextFavorite.longitud)
-                        remainingFavorites.remove(nextFavorite)
-                        Log.d("ItineraryManager", "Día $day: Añadido favorito '${nextFavorite.nombre}'. Tiempo acumulado: $currentTime")
-                    } else {
-                        break
+            // Función interna para añadir POIs optimizados
+            fun addPOIsToDay(
+                poiList: MutableList<Monument>,
+                maxTime: Double
+            ) {
+                while (poiList.isNotEmpty() && currentTime < maxTime && dailyRoute.size < 10) {
+                    val nextPOI = poiList.minByOrNull {
+                        calculateDistance(currentLocation, GeoPoint(it.latitud, it.longitud))
+                    }
+
+                    if (nextPOI != null) {
+                        val travelTime = calculateTravelTime(
+                            calculateDistance(currentLocation, GeoPoint(nextPOI.latitud, nextPOI.longitud)),
+                            transportType
+                        )
+                        val visitTime = if (visitType == "Tour rápido") 0.5 else nextPOI.duracionVisita
+
+                        if (currentTime + travelTime + visitTime <= maxTime) {
+                            dailyRoute.add(nextPOI)
+                            currentTime += travelTime + visitTime
+                            currentLocation = GeoPoint(nextPOI.latitud, nextPOI.longitud)
+                            poiList.remove(nextPOI)
+                        } else {
+                            break
+                        }
                     }
                 }
             }
 
-            // Añadir filtrados
-            while (remainingFiltered.isNotEmpty() && currentTime < hoursPerDay && dailyRoute.size < 10) {
-                val nextFiltered = remainingFiltered.minByOrNull {
-                    calculateDistance(currentLocation, GeoPoint(it.latitud, it.longitud))
-                }
-                if (nextFiltered != null) {
-                    val travelTime = calculateTravelTime(
-                        calculateDistance(currentLocation, GeoPoint(nextFiltered.latitud, nextFiltered.longitud)),
-                        transportType
-                    )
-                    val visitTime = if (visitType == "Tour rápido") 0.5 else nextFiltered.duracionVisita
-                    if (currentTime + travelTime + visitTime <= hoursPerDay) {
-                        dailyRoute.add(nextFiltered)
-                        currentTime += travelTime + visitTime
-                        currentLocation = GeoPoint(nextFiltered.latitud, nextFiltered.longitud)
-                        remainingFiltered.remove(nextFiltered)
-                        Log.d("ItineraryManager", "Día $day: Añadido filtrado '${nextFiltered.nombre}'. Tiempo acumulado: $currentTime")
-                    } else {
-                        break
-                    }
-                }
-            }
+            // Añadir favoritos al día
+            addPOIsToDay(uniqueFavorites, hoursPerDay)
 
-            // Añadir restantes
-            while (remainingMonuments.isNotEmpty() && currentTime < hoursPerDay && dailyRoute.size < 10) {
-                val nextMonument = remainingMonuments.minByOrNull {
-                    calculateDistance(currentLocation, GeoPoint(it.latitud, it.longitud))
-                }
-                if (nextMonument != null) {
-                    val travelTime = calculateTravelTime(
-                        calculateDistance(currentLocation, GeoPoint(nextMonument.latitud, nextMonument.longitud)),
-                        transportType
-                    )
-                    val visitTime = if (visitType == "Tour rápido") 0.5 else nextMonument.duracionVisita
-                    if (currentTime + travelTime + visitTime <= hoursPerDay) {
-                        dailyRoute.add(nextMonument)
-                        currentTime += travelTime + visitTime
-                        currentLocation = GeoPoint(nextMonument.latitud, nextMonument.longitud)
-                        remainingMonuments.remove(nextMonument)
-                        Log.d("ItineraryManager", "Día $day: Añadido restante '${nextMonument.nombre}'. Tiempo acumulado: $currentTime")
-                    } else {
-                        break
-                    }
-                }
-            }
+            // Añadir POIs filtrados al día
+            addPOIsToDay(uniqueFiltered, hoursPerDay)
 
-            Log.d("ItineraryManager", "Día $day completado. Monumentos añadidos: ${dailyRoute.size}")
-            dailyRoutes.add(dailyRoute)
+            // Añadir POIs restantes al día
+            addPOIsToDay(uniqueMonuments, hoursPerDay)
 
-            if (dailyRoute.isEmpty() && remainingMonuments.isEmpty()) {
-                Log.d("ItineraryManager", "Día $day: No quedan monumentos por añadir.")
+            // Guardar la ruta diaria si contiene POIs
+            if (dailyRoute.isNotEmpty()) {
+                dailyRoutes.add(dailyRoute)
+            } else {
+                // Si no hay más POIs disponibles, terminamos de generar itinerarios
+                break
             }
         }
 
-        Log.d("ItineraryManager", "Generación completada. Total de días: ${dailyRoutes.size}")
         return dailyRoutes
     }
+
+
 
 
     private fun calculateDistance(start: GeoPoint, end: GeoPoint): Double {
