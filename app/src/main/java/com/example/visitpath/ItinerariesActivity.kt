@@ -2,10 +2,12 @@ package com.example.visitpath
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.google.firebase.firestore.GeoPoint
 
 class ItinerariesActivity : AppCompatActivity() {
@@ -35,6 +37,22 @@ class ItinerariesActivity : AppCompatActivity() {
         for ((index, itinerary) in itineraries.withIndex()) {
             val button = Button(this) // Crear un nuevo botón
             button.text = "Día ${index + 1}"
+
+            // Establecer estilo del botón
+            button.setBackgroundResource(R.drawable.rounded_button)
+            button.setTextColor(ContextCompat.getColor(this, R.color.white)) // Texto blanco
+            button.textSize = 16f
+            button.setAllCaps(false)
+
+            // Configurar márgenes del botón
+            val params = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            params.setMargins(16, 16, 16, 16) // Márgenes entre botones
+            button.layoutParams = params
+
+
             button.setOnClickListener {
                 // Verificar si hay puntos para el día seleccionado
                 if (itinerary.isNotEmpty()) {

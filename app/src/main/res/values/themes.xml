@@ -1,11 +1,20 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!-- Tema principal de la aplicación -->
     <style name="Theme.VisitPath" parent="Theme.MaterialComponents.Light.DarkActionBar">
-        <!-- Personaliza tu tema aquí -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
-        <item name="android:windowBackground">@android:color/white</item>
-        <item name="materialButtonStyle">@style/Widget.MaterialComponents.Button</item>
+        <!-- Personalización del tema -->
+        <item name="colorPrimary">@color/colorPrimary</item> <!-- Azul principal -->
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item> <!-- Azul oscuro -->
+        <item name="colorAccent">@color/colorAccent</item> <!-- Azul claro -->
+        <item name="android:windowBackground">@color/white</item> <!-- Fondo blanco -->
+        <item name="android:textColorPrimary">@color/black</item> <!-- Texto principal en negro -->
+        <item name="android:textColorSecondary">@color/light_gray</item> <!-- Texto secundario en gris -->
+        <item name="materialButtonStyle">@style/CustomButtonStyle</item> <!-- Referencia al estilo personalizado -->
+    </style>
+
+    <!-- Estilo personalizado para botones -->
+    <style name="CustomButtonStyle" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@color/colorPrimary</item> <!-- Botón en azul principal -->
+        <item name="rippleColor">@color/colorAccent</item> <!-- Efecto de toque en azul claro -->
+        <item name="android:textColor">@color/white</item> <!-- Texto del botón en blanco -->
     </style>
 </resources>
