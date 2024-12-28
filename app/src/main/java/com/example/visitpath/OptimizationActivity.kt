@@ -130,7 +130,10 @@ class OptimizationActivity : AppCompatActivity() {
                 "${selectedMonument.nombre} eliminado de la lista de optimización.",
                 Toast.LENGTH_SHORT
             ).show()
-        }, showDeleteIcon = true)
+        },
+
+
+            showDeleteIcon = true)
 
         recyclerView.adapter = monumentAdapter
 

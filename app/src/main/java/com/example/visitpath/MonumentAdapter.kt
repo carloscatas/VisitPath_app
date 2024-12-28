@@ -19,6 +19,7 @@ class MonumentAdapter(
     private val showDeleteIcon: Boolean = false // Si es true, muestra la papelera en vez de la estrella
 ) : RecyclerView.Adapter<MonumentAdapter.MonumentViewHolder>() {
 
+
     class MonumentViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val nombreTextView: TextView = view.findViewById(R.id.monumentName)
         val descripcionTextView: TextView = view.findViewById(R.id.monumentDescription)

@@ -67,7 +67,9 @@ class RoutePreviewActivity : AppCompatActivity() {
                 Toast.makeText(this, "La ruta quedó vacía. Regresando a la pantalla anterior.", Toast.LENGTH_SHORT).show()
                 finish() // Cierra la actividad si la lista está vacía
             }
-        }, showDeleteIcon = true)
+        },
+
+            showDeleteIcon = true)
 
         recyclerView.adapter = monumentAdapter
 

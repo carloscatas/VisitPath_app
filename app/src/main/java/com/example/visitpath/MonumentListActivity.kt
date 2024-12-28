@@ -52,6 +52,7 @@ class MonumentListActivity : AppCompatActivity() {
     private lateinit var sharedPreferences: SharedPreferences
     private var isTutorialInProgress = false
     private var currentTutorialStep = TUTORIAL_STEP_NONE
+    private var isInStarTutorialStep = false
 
     // Variables para almacenar los filtros seleccionados
     private val selectedCategories = mutableListOf<String>()
@@ -114,7 +115,6 @@ class MonumentListActivity : AppCompatActivity() {
 
         recyclerView.adapter = monumentAdapter
 
-        // Configurar el botón para abrir la pantalla de favoritos
         val openFavoritesLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
                 val updatedFavorites = result.data?.getParcelableArrayListExtra<Monument>("updatedFavorites")
@@ -132,7 +132,6 @@ class MonumentListActivity : AppCompatActivity() {
             }
         }
 
-        // Configurar el botón para abrir la pantalla de favoritos
         val openFavoritesButton: FloatingActionButton = findViewById(R.id.openFavoritesButton)
         openFavoritesButton.setOnClickListener {
             // Construir la lista de favoritos dinámica antes de abrir la actividad
@@ -202,6 +201,7 @@ class MonumentListActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+
 
         if (requestCode == ROUTE_CONFIG_REQUEST_CODE && resultCode == RESULT_OK) {
             val selectedTime = data?.getIntExtra("selectedTime", 1) ?: 1
@@ -456,7 +456,6 @@ class MonumentListActivity : AppCompatActivity() {
             durationCheckboxes[i].isChecked = selectedDurations.contains(durations[i])
         }
 
-
         val checkBoxEntryFree = dialogLayout.findViewById<CheckBox>(R.id.checkbox_entry_free)
         val checkBoxEntryPaid = dialogLayout.findViewById<CheckBox>(R.id.checkbox_entry_paid)
         val checkBoxAccessibilityYes = dialogLayout.findViewById<CheckBox>(R.id.checkbox_accessibility_yes)
@@ -473,7 +472,6 @@ class MonumentListActivity : AppCompatActivity() {
         checkBoxAudioNo.isChecked = selectedAudioGuideOptions.contains("No")
 
         filterDialog.setPositiveButton("Aplicar") { dialog, _ ->
-
             selectedCategories.clear()
             for (i in categoryCheckboxes.indices) {
                 if (categoryCheckboxes[i].isChecked) {
@@ -511,17 +509,32 @@ class MonumentListActivity : AppCompatActivity() {
 
             applyFilters()
             dialog.dismiss()
+
+            if (isTutorialInProgress && loadTutorialStep() == TUTORIAL_STEP_FILTER) {
+                showMonumentStarPrompt() // Continúa con el tutorial
+            }
         }
 
         filterDialog.setNeutralButton("Reestablecer") { dialog, _ ->
             resetFilters()
             dialog.dismiss()
+            if (isTutorialInProgress && loadTutorialStep() == TUTORIAL_STEP_FILTER) {
+                showMonumentStarPrompt()
+            }
         }
 
-        filterDialog.show()
+        val dialog = filterDialog.create() // Crear el diálogo
+
+        // Configuración del comportamiento al cerrar el diálogo (gesto o botón "Atrás")
+        dialog.setOnDismissListener {
+            // Reanuda el tutorial si el usuario lo cierra con el gesto "Atrás"
+            if (isTutorialInProgress && loadTutorialStep() == TUTORIAL_STEP_FILTER) {
+                showMonumentStarPrompt() // Continúa el tutorial
+            }
+        }
+
+        dialog.show() // Mostrar el diálogo
     }
-
-
 
     private val selectedAccessibilityOptions = mutableSetOf<String>()
     private val selectedAudioGuideOptions = mutableSetOf<String>()
@@ -778,7 +791,7 @@ class MonumentListActivity : AppCompatActivity() {
         MaterialTapTargetPrompt.Builder(this)
             .setTarget(findViewById<ImageButton>(R.id.filterButton)) // Botón de filtros
             .setPrimaryText("Pulse aquí para añadir filtros")
-            .setSecondaryText("Puede filtrar los monumentos según sus preferencias.")
+            .setSecondaryText("Puede filtrar los puntos de interés según sus preferencias.")
             .setPromptStateChangeListener { _, state ->
                 if (state == MaterialTapTargetPrompt.STATE_DISMISSED) {
                     saveTutorialStep(TUTORIAL_STEP_FILTER)
@@ -791,11 +804,13 @@ class MonumentListActivity : AppCompatActivity() {
     private fun showMonumentStarPrompt() {
         if (currentTutorialStep == TUTORIAL_STEP_MONUMENT_STAR) return
         currentTutorialStep = TUTORIAL_STEP_MONUMENT_STAR
-        val monumentStarView = findViewById<View>(R.id.actionIcon) // Reemplaza con el ID correcto
+        isInStarTutorialStep = true // Activamos la bandera
+
+        val monumentStarView = findViewById<View>(R.id.actionIcon)
         MaterialTapTargetPrompt.Builder(this)
             .setTarget(monumentStarView)
-            .setPrimaryText("Marque el monumento como favorito")
-            .setSecondaryText("Pulse esta estrella para añadir el monumento a su lista de favoritos.")
+            .setPrimaryText("Marque el punto de interés como favorito")
+            .setSecondaryText("Pulse esta estrella para añadir el punto de interés a su lista de favoritos.")
             .setPromptStateChangeListener { _, state ->
                 if (state == MaterialTapTargetPrompt.STATE_DISMISSED) {
                     saveTutorialStep(TUTORIAL_STEP_MONUMENT_STAR)
@@ -806,9 +821,10 @@ class MonumentListActivity : AppCompatActivity() {
 
         // Interceptar el clic en la estrella durante el tutorial
         monumentStarView.setOnClickListener {
-            if (isTutorialInProgress && currentTutorialStep == TUTORIAL_STEP_MONUMENT_STAR) {
+            if (isInStarTutorialStep) {
                 // Continuar con el tutorial
                 saveTutorialStep(TUTORIAL_STEP_MONUMENT_STAR)
+                isInStarTutorialStep = false // Desactivamos la bandera
                 showFavoritesPrompt()
             } else {
                 // Si no estamos en el tutorial, proceder con la funcionalidad normal
@@ -824,7 +840,7 @@ class MonumentListActivity : AppCompatActivity() {
         MaterialTapTargetPrompt.Builder(this)
             .setTarget(findViewById<FloatingActionButton>(R.id.openFavoritesButton))
             .setPrimaryText("Pulse aquí para ver sus favoritos")
-            .setSecondaryText("Acceda a la lista de sus monumentos favoritos.")
+            .setSecondaryText("Acceda a la lista de sus puntos de interés favoritos.")
             .setPromptStateChangeListener { _, state ->
                 if (state == MaterialTapTargetPrompt.STATE_DISMISSED) {
                     saveTutorialStep(TUTORIAL_STEP_FAVORITES)
@@ -872,5 +888,32 @@ class MonumentListActivity : AppCompatActivity() {
         isTutorialInProgress = false
         resetTutorialStep()
     }
+
+    override fun onBackPressed() {
+        if (isTutorialInProgress) {
+            val currentStep = loadTutorialStep()
+            when (currentStep) {
+                TUTORIAL_STEP_FILTER -> {
+                    showMonumentStarPrompt() // Continúa el tutorial en el siguiente paso
+                    return // Evita que se cierre la actividad
+                }
+                TUTORIAL_STEP_MONUMENT_STAR -> {
+                    showFavoritesPrompt()
+                    return
+                }
+                TUTORIAL_STEP_FAVORITES -> {
+                    showRoutePrompt()
+                    return
+                }
+                TUTORIAL_STEP_ROUTE -> {
+                    markTutorialCompleted()
+                    return
+                }
+            }
+        }
+        super.onBackPressed() // Comportamiento normal si el tutorial no está activo
+    }
+
+
 
 }
