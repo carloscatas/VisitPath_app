@@ -255,7 +255,7 @@ class MonumentListActivity : AppCompatActivity() {
                     AlertDialog.Builder(this)
                         .setTitle("Transporte Público no soportado")
                         .setMessage("No es posible generar rutas con múltiples paradas en transporte público. Elige otro medio de transporte.")
-                        .setPositiveButton("OK") { dialog, _ ->
+                        .setPositiveButton("Aceptar") { dialog, _ ->
                             dialog.dismiss()
                         }
                         .show()
