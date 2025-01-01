@@ -90,9 +90,6 @@ class MonumentListActivity : AppCompatActivity() {
         val showTutorial = sharedPreferences.getBoolean("showTutorial", false)
         if (!showTutorial) {
             showTutorialDialog()
-
-        } else {
-            startTutorialSequence() // Reanudar el tutorial desde el progreso guardado
         }
 
 
