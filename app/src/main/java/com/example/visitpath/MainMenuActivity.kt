@@ -8,6 +8,6 @@ class MainMenuActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_main_menu) // No necesitas más configuraciones por ahora
+        setContentView(R.layout.activity_main_menu)
     }
 }
